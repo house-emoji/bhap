@@ -1,0 +1,7 @@
+Hello,
+
+Congratulations! You have been invited to serve on the BHAP Consortium! You will serve on a panel of only the best and brightest, making important decisions on the future of the shared household.
+
+To get started, click the following link to create your account:
+
+{{.CreateAccountURL}}

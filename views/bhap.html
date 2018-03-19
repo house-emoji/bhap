@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>BHAP {{.PaddedID}} — {{.Title}}</title>
+  </head>
+
+  <body>
+    <h1>BHAP {{.PaddedID}} — {{.Title}}</h1>
+
+    <!-- Overview table -->
+    <table>
+      <tr>
+        <th>BHAP:</th>
+        <td>{{.PaddedID}}</td>
+      </tr>
+      <tr>
+        <th>Title:</th>
+        <td>{{.Title}}</td>
+      </tr>
+      <tr>
+        <th>Last Modified:</th>
+        <td>{{.LastModified}}</td>
+      </tr>
+      <tr>
+        <th>Author:</th>
+        <td>{{.Author}}</td>
+      </tr>
+      <tr>
+        <th>Status:</th>
+        <td>{{.Status}}</td>
+      </tr>
+      <tr>
+        <th>Created Date:</th>
+        <td>{{.CreatedDate}}</td>
+      </tr>
+    </table>
+
+    <div>
+      {{.HTMLContent}}
+    </div>
+  </body>
+</html>

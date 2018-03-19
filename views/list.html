@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>BHAP List</title>
+  </head>
+
+  <body>
+    <h1>All Proposals</h1>
+
+    <a href="/propose">Propose a BHAP</a>
+
+    <ul>
+      {{range .}}
+        <li>
+          <a href="/bhap/{{.ID}}">
+            BHAP {{.ID | printf "%04d"}}: {{.Title}}
+          </a>
+        </li>
+      {{end}}
+    </ul>
+  </body>
+</html>

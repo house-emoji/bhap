@@ -1,0 +1,4 @@
+cron:
+- description: "send out invitations to make accounts"
+  url: /tasks/send-invitations
+  schedule: every 30 minutes

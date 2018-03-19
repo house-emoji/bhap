@@ -1,0 +1,12 @@
+runtime: go
+api_version: go1
+
+handlers:
+- url: /tasks/.*
+  script: _go_app
+  login: admin
+- url: /invite
+  script: _go_app
+  login: admin
+- url: /.*
+  script: _go_app
