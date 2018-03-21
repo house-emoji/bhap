@@ -8,8 +8,9 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-const UserEntityName = "User"
+const userEntityName = "User"
 
+// user contains data on a member of the BHAP consortium.
 type user struct {
 	FirstName    string
 	LastName     string
@@ -25,7 +26,7 @@ func (u user) String() string {
 // correct.
 func checkLogin(ctx context.Context, email, password string) (bool, error) {
 	var results []user
-	query := datastore.NewQuery(UserEntityName).
+	query := datastore.NewQuery(userEntityName).
 		Filter("Email =", email).
 		Limit(1)
 	if _, err := query.GetAll(ctx, &results); err != nil {
@@ -41,9 +42,11 @@ func checkLogin(ctx context.Context, email, password string) (bool, error) {
 	return err == nil, nil
 }
 
+// userByEmail returns the user with the given email. If no user with that
+// email exists, the key will be nil.
 func userByEmail(ctx context.Context, email string) (user, *datastore.Key, error) {
 	var results []user
-	query := datastore.NewQuery(UserEntityName).
+	query := datastore.NewQuery(userEntityName).
 		Filter("Email =", email).
 		Limit(1)
 	keys, err := query.GetAll(ctx, &results)

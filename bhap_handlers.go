@@ -1,11 +1,11 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"google.golang.org/appengine"
@@ -17,18 +17,11 @@ import (
 const dateFormat = "2006-01-02"
 
 var (
-	listTemplate    *template.Template
-	bhapTemplate    *template.Template
-	proposeTemplate *template.Template
-	newUserTemplate *template.Template
+	listTemplate    = compileTempl("views/list.html")
+	bhapTemplate    = compileTempl("views/bhap.html")
+	proposeTemplate = compileTempl("views/propose.html")
+	newUserTemplate = compileTempl("views/new-user.html")
 )
-
-func init() {
-	listTemplate = template.Must(template.ParseFiles("views/list.html"))
-	bhapTemplate = template.Must(template.ParseFiles("views/bhap.html"))
-	proposeTemplate = template.Must(template.ParseFiles("views/propose.html"))
-	newUserTemplate = template.Must(template.ParseFiles("views/new-user.html"))
-}
 
 // serveBHAPPage serves up a page that displays info on a single BHAP.
 func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
@@ -94,24 +87,65 @@ func serveListPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filler := bhapsToListItemFillers(bhaps)
+	// Get the current logged in user
+	currUser, userKey, err := userFromSession(ctx, r)
+	if err != nil {
+		http.Error(w, "Could not read session", http.StatusInternalServerError)
+		log.Errorf(ctx, "could not get session email: %v", err)
+		return
+	}
+
+	filler := listFiller{
+		LoggedIn: userKey != nil,
+		Email:    currUser.Email,
+		Items:    bhapsToListItemFillers(bhaps),
+	}
 
 	showTemplate(ctx, w, listTemplate, filler)
 }
 
-// showTemplate executes the given template with the given filler. If there's
-// an error, an internal server error is reported.
-func showTemplate(
-	ctx context.Context,
-	w http.ResponseWriter,
-	templ *template.Template,
-	filler interface{}) {
+// handleNewBHAPForm creates a new BHAP based on information passed from a POST form.
+func handleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
+	ctx := appengine.NewContext(r)
 
-	if err := templ.Execute(w, filler); err != nil {
-		http.Error(w,
-			"Could not execute template",
-			http.StatusInternalServerError)
-		log.Errorf(ctx, "error executing template %v: %v",
-			templ.Name(), err)
+	title := r.FormValue("title")
+	content := r.FormValue("content")
+
+	// Find what the ID of the new BHAP should be
+	newID, err := nextID(ctx)
+	if err != nil {
+		log.Errorf(ctx, "could not query BHAPs: %v", err)
+		http.Error(w, "Error while finding BHAP", http.StatusInternalServerError)
+		return
 	}
+
+	// Get the current logged in user
+	_, userKey, err := userFromSession(ctx, r)
+	if err != nil {
+		http.Error(w, "Could not read session", http.StatusInternalServerError)
+		log.Errorf(ctx, "could not get session email: %v", err)
+		return
+	}
+
+	newBHAP := bhap{
+		ID:           newID,
+		Title:        title,
+		LastModified: time.Now(),
+		Author:       userKey,
+		Status:       draftStatus,
+		CreatedDate:  time.Now(),
+		Content:      content,
+	}
+
+	// Save the new BHAP
+	key := datastore.NewKey(ctx, "BHAP", "", 0, nil)
+	if _, err := datastore.Put(ctx, key, &newBHAP); err != nil {
+		log.Errorf(ctx, "failed to save BHAP: %v", err)
+		http.Error(w, "Could not save BHAP", http.StatusInternalServerError)
+		return
+	}
+
+	log.Infof(ctx, "Saved BHAP %v: %v", newID, title)
+
+	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", newID), http.StatusSeeOther)
 }

@@ -13,13 +13,16 @@ import (
 	"google.golang.org/appengine/log"
 )
 
+const minPasswordLength = 5
+
 // serveLoginPage serves the page for logging in.
 func serveLoginPage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "views/login.html")
 }
 
-// login attempts to log the user in using credentials from a POST form.
-func login(w http.ResponseWriter, r *http.Request) {
+// handleLoginForm attempts to log the user in using credentials from a POST
+// form.
+func handleLoginForm(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	email := r.FormValue("email")
@@ -50,6 +53,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 		log.Errorf(ctx, "could not save session: %v", err)
 		return
 	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // logout logs the user out.
@@ -69,7 +74,9 @@ func serveInvitePage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "views/invite.html")
 }
 
-func createInvitation(w http.ResponseWriter, r *http.Request) {
+// handleInvitationForm creates a new invitation based on form input from a
+// POST request.
+func handleInvitationForm(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	email := r.FormValue("email")
@@ -88,6 +95,8 @@ func createInvitation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Infof(ctx, "created a new invitation for %v", email)
+
+	http.Redirect(w, r, "/invite", http.StatusSeeOther)
 }
 
 // serveNewUserPage serves the page that can be used to create a new user from
@@ -122,7 +131,8 @@ func serveNewUserPage(w http.ResponseWriter, r *http.Request) {
 	showTemplate(ctx, w, newUserTemplate, filler)
 }
 
-func newUser(w http.ResponseWriter, r *http.Request) {
+// handleNewUserForm creates a new user based on form data from a POST request.
+func handleNewUserForm(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	// Get the invitation UID
@@ -183,7 +193,7 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 		PasswordHash: passwordHash,
 	}
 
-	userKey := datastore.NewKey(ctx, UserEntityName, "", 0, nil)
+	userKey := datastore.NewKey(ctx, userEntityName, "", 0, nil)
 	if _, err := datastore.Put(ctx, userKey, &newUser); err != nil {
 		http.Error(w,
 			"Error saving new user",
@@ -196,4 +206,28 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 	if err := datastore.Delete(ctx, inviteKey); err != nil {
 		log.Errorf(ctx, "could not delete used invitation: %v", err)
 	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// requireLogin is middleware that requires the user be logged in.
+func requireLogin(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := appengine.NewContext(r)
+
+		loginSession, err := sessionStore.Get(r, "login")
+		if err != nil {
+			http.Error(w, "Could not decode session", http.StatusInternalServerError)
+			log.Errorf(ctx, "could not decode session: %v", err)
+			return
+		}
+
+		if loginSession.IsNew {
+			log.Infof(ctx, "No session exists, redirecting to login")
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		next(w, r)
+	})
 }

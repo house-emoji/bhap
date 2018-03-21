@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"net/http"
-	"text/template"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -11,14 +10,12 @@ import (
 	"google.golang.org/appengine/mail"
 )
 
-var invitationTemplate *template.Template
+var invitationTemplate = compileTempl("mail_templates/invitation.txt")
 
 const InvitationSubject = "You have been invited to join the BHAP Consortium"
 
-func init() {
-	invitationTemplate = template.Must(template.ParseFiles("mail_templates/invitation.txt"))
-}
-
+// sendInvitations sends any unsent invitation emails to potential users. It is
+// called periodically as a cron job.
 func sendInvitations(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 

@@ -6,12 +6,18 @@
   </head>
 
   <body>
+    {{if .LoggedIn}}
+      <p>
+        Logged in as {{.Email}}.
+        <a href="/logout">Log out.</a>
+      </p>
+    {{end}}
     <h1>All Proposals</h1>
 
     <a href="/propose">Propose a BHAP</a>
 
     <ul>
-      {{range .}}
+      {{range .Items}}
         <li>
           <a href="/bhap/{{.ID}}">
             BHAP {{.ID | printf "%04d"}}: {{.Title}}
