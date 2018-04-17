@@ -6,13 +6,25 @@ import (
 
 // bhapFiller fills the BHAP viewer page template.
 type bhapFiller struct {
-	PaddedID     string
-	Title        string
-	LastModified string
-	Author       string
-	Status       status
-	CreatedDate  string
-	HTMLContent  template.HTML
+	ID            int
+	PaddedID      string
+	Title         string
+	LastModified  string
+	Author        string
+	Status        status
+	CreatedDate   string
+	VotingOptions votingOptions
+	HTMLContent   template.HTML
+}
+
+// votingOptions configures what voting options the user has in the BHAP
+// screen.
+type votingOptions struct {
+	ShowReadyForDiscussion bool
+	ShowAccept             bool
+	ShowReject             bool
+	ShowWithdraw           bool
+	ShowReplace            bool
 }
 
 // list Filler fills the BHAP list page template.

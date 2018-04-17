@@ -23,6 +23,17 @@ func main() {
 	r.HandleFunc("/bhap/{id}", serveBHAPPage).
 		Methods("GET")
 
+	r.HandleFunc("/bhap/{id}/ready-for-discussion").
+		Methods("POST")
+	r.HandleFunc("/bhap/{id}/vote-accept").
+		Methods("POST")
+	r.HandleFunc("/bhap/{id}/vote-reject").
+		Methods("POST")
+	r.HandleFunc("/bhap/{id}/withdraw").
+		Methods("POST")
+	r.HandleFunc("/bhap/{id}/vote-replace").
+		Methods("POST")
+
 	r.Handle("/propose", requireLogin(serveProposePage)).
 		Methods("GET")
 	r.HandleFunc("/propose", handleNewBHAPForm).

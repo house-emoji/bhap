@@ -59,14 +59,46 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get the current logged in user
+	currUser, userKey, err := userFromSession(ctx, r)
+	if err != nil {
+		http.Error(w, "Could not read session", http.StatusInternalServerError)
+		log.Errorf(ctx, "could not get session email: %v", err)
+		return
+	}
+
+	// Decide what voting options the user should have
+	var votingOpts votingOptions
+	if userKey != nil {
+		switch loadedBHAP.Status {
+		case draftStatus:
+			if author.Email == currUser.Email {
+				votingOpts.ShowReadyForDiscussion = true
+				votingOpts.ShowWithdraw = true
+			}
+		case discussionStatus:
+			if author.Email == currUser.Email {
+				votingOpts.ShowWithdraw = true
+			} else {
+				votingOpts.ShowAccept = true
+				votingOpts.ShowReject = true
+			}
+		case acceptedStatus:
+			votingOpts.ShowReplace = true
+		}
+	}
+	log.Infof(ctx, "%+v", votingOpts)
+
 	filler := bhapFiller{
-		PaddedID:     fmt.Sprintf("%04d", loadedBHAP.ID),
-		Title:        loadedBHAP.Title,
-		LastModified: loadedBHAP.LastModified.Format(dateFormat),
-		Author:       author.String(),
-		Status:       loadedBHAP.Status,
-		CreatedDate:  loadedBHAP.CreatedDate.Format(dateFormat),
-		HTMLContent:  template.HTML(html),
+		ID:            loadedBHAP.ID,
+		PaddedID:      fmt.Sprintf("%04d", loadedBHAP.ID),
+		Title:         loadedBHAP.Title,
+		LastModified:  loadedBHAP.LastModified.Format(dateFormat),
+		Author:        author.String(),
+		Status:        loadedBHAP.Status,
+		CreatedDate:   loadedBHAP.CreatedDate.Format(dateFormat),
+		VotingOptions: votingOpts,
+		HTMLContent:   template.HTML(html),
 	}
 	showTemplate(ctx, w, bhapTemplate, filler)
 }
