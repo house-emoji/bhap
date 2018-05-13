@@ -37,13 +37,13 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load the requested BHAP
-	loadedBHAP, exists, err := bhapByID(ctx, id)
+	loadedBHAP, bhapKey, err := bhapByID(ctx, id)
 	if err != nil {
 		log.Errorf(ctx, "could not load BHAP: %v", err)
 		http.Error(w, "Failed to load BHAP", http.StatusInternalServerError)
 		return
 	}
-	if !exists {
+	if bhapKey == nil {
 		http.Error(w, fmt.Sprintf("No BHAP with ID %v", id), 404)
 		log.Warningf(ctx, "unknown BHAP requested: %v", id)
 		return

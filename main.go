@@ -23,16 +23,21 @@ func main() {
 	r.HandleFunc("/bhap/{id}", serveBHAPPage).
 		Methods("GET")
 
-	r.HandleFunc("/bhap/{id}/ready-for-discussion").
+	r.HandleFunc("/bhap/{id}/ready-for-discussion",
+		setUpBHAPOperator(handleReadyForDiscussion)).
 		Methods("POST")
-	r.HandleFunc("/bhap/{id}/vote-accept").
+	r.HandleFunc("/bhap/{id}/vote-accept",
+		setUpBHAPOperator(handleVoteAccept)).
 		Methods("POST")
-	r.HandleFunc("/bhap/{id}/vote-reject").
+	r.HandleFunc("/bhap/{id}/vote-reject",
+		setUpBHAPOperator(handleVoteReject)).
 		Methods("POST")
-	r.HandleFunc("/bhap/{id}/withdraw").
+	r.HandleFunc("/bhap/{id}/withdraw",
+		setUpBHAPOperator(handleWithdraw)).
 		Methods("POST")
-	r.HandleFunc("/bhap/{id}/vote-replace").
-		Methods("POST")
+	// TODO(velovix): Implement replaced vote
+	/*r.HandleFunc("/bhap/{id}/vote-replace").
+	Methods("POST")*/
 
 	r.Handle("/propose", requireLogin(serveProposePage)).
 		Methods("GET")

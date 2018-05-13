@@ -46,20 +46,21 @@ type bhap struct {
 
 // bhapByID gets a BHAP by the given ID unless none exists, in which case
 // "exists" equals false.
-func bhapByID(ctx context.Context, id int) (output bhap, exists bool, err error) {
+func bhapByID(ctx context.Context, id int) (bhap, *datastore.Key, error) {
 	var results []bhap
 	query := datastore.NewQuery(bhapEntityName).
 		Filter("ID =", id).
 		Limit(1)
-	if _, err := query.GetAll(ctx, &results); err != nil {
-		return bhap{}, false, err
+	keys, err := query.GetAll(ctx, &results)
+	if err != nil {
+		return bhap{}, nil, err
 	}
 
 	if len(results) == 0 {
-		return bhap{}, false, nil
+		return bhap{}, nil, nil
 	}
 
-	return results[0], true, nil
+	return results[0], keys[0], nil
 }
 
 // nextID returns the next unused ID for a new BHAP.
