@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -38,6 +39,7 @@ func handleReadyForDiscussion(op bhapOperator, w http.ResponseWriter, r *http.Re
 	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
 }
 
+// handleVoteAccept handles requests to submit an accept vote on the BHAP.
 func handleVoteAccept(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
@@ -54,9 +56,23 @@ func handleVoteAccept(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO(velovix): Do more here
+	vote := vote{
+		onBHAP: op.bhapKey,
+		byUser: op.userKey,
+		value:  acceptedStatus}
+	key := datastore.NewIncompleteKey(ctx, voteEntityName, op.bhapKey)
+	if _, err := datastore.Put(ctx, key, &vote); err != nil {
+		log.Errorf(ctx, "could not create vote: %v", err)
+		http.Error(w, "Could not create vote", 500)
+		return
+	}
+
+	checkVotes(ctx, op)
+
+	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
 }
 
+// handleVoteReject handles requests to submit an reject vote on the BHAP.
 func handleVoteReject(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
@@ -73,9 +89,23 @@ func handleVoteReject(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO(velovix): Do more here
+	vote := vote{
+		onBHAP: op.bhapKey,
+		byUser: op.userKey,
+		value:  rejectedStatus}
+	key := datastore.NewIncompleteKey(ctx, voteEntityName, nil)
+	if _, err := datastore.Put(ctx, key, &vote); err != nil {
+		log.Errorf(ctx, "could not create vote: %v", err)
+		http.Error(w, "Could not create vote", 500)
+		return
+	}
+
+	checkVotes(ctx, op)
+
+	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
 }
 
+// handleWithdraw handles requests to withdraw a BHAP.
 func handleWithdraw(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
@@ -101,4 +131,42 @@ func handleWithdraw(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
+}
+
+// checkVotes counts up all votes for a BHAP and changes its status if
+// necessary.
+func checkVotes(ctx context.Context, op bhapOperator) error {
+	votes, err := votesForBHAP(ctx, op.bhapKey)
+	if err != nil {
+		return err
+	}
+
+	accepted := 0
+	rejected := 0
+	for _, vote := range votes {
+		if vote.value == acceptedStatus {
+			accepted++
+		} else if vote.value == rejectedStatus {
+			rejected++
+		}
+	}
+
+	userCnt, err := datastore.NewQuery(userEntityName).Count(ctx)
+	if err != nil {
+		return fmt.Errorf("counting users: %v", err)
+	}
+
+	if accepted > userCnt/2 {
+		op.bhap.Status = acceptedStatus
+		log.Infof(ctx, "marked BHAP %v as accepted", op.bhap.ID)
+	} else if rejected > userCnt/2 {
+		op.bhap.Status = rejectedStatus
+		log.Infof(ctx, "marked BHAP %v as rejected", op.bhap.ID)
+	}
+
+	if _, err := datastore.Put(ctx, op.bhapKey, &op.bhap); err != nil {
+		return fmt.Errorf("saving BHAP: %v", err)
+	}
+
+	return nil
 }
