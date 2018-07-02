@@ -6,97 +6,16 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/rs/xid"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
 
-const minPasswordLength = 5
-
-// serveLoginPage serves the page for logging in.
-func serveLoginPage(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "views/login.html")
-}
-
-// handleLoginForm attempts to log the user in using credentials from a POST
-// form.
-func handleLoginForm(w http.ResponseWriter, r *http.Request) {
-	ctx := appengine.NewContext(r)
-
-	email := r.FormValue("email")
-	password := r.FormValue("password")
-
-	loggedIn, err := checkLogin(ctx, email, password)
-	if err != nil {
-		log.Errorf(ctx, "Error authenticating: %v", err)
-		http.Error(w, "Error authenticating", http.StatusInternalServerError)
-		return
-	}
-	if !loggedIn {
-		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
-		return
-	}
-
-	loginSession, err := sessionStore.Get(r, "login")
-	if err != nil {
-		http.Error(w, "Could not decode session", http.StatusInternalServerError)
-		log.Errorf(ctx, "could not decode session: %v", err)
-		return
-	}
-
-	loginSession.Values["email"] = email
-
-	if err := loginSession.Save(r, w); err != nil {
-		http.Error(w, "Error logging in", http.StatusInternalServerError)
-		log.Errorf(ctx, "could not save session: %v", err)
-		return
-	}
-
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-// logout logs the user out.
-func logout(w http.ResponseWriter, r *http.Request) {
-	ctx := appengine.NewContext(r)
-
-	if err := deleteSession(w, r); err != nil {
-		http.Error(w, "Could not log out", http.StatusInternalServerError)
-		log.Errorf(ctx, "could not log out: %v", err)
-		return
-	}
-}
-
-// serveInvitePage serves the page that is used to create new invitations to
-// join the BHAP consortium.
-func serveInvitePage(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "views/invite.html")
-}
-
-// handleInvitationForm creates a new invitation based on form input from a
-// POST request.
-func handleInvitationForm(w http.ResponseWriter, r *http.Request) {
-	ctx := appengine.NewContext(r)
-
-	email := r.FormValue("email")
-
-	newInvitation := invitation{
-		Email:     email,
-		UID:       xid.New().String(),
-		EmailSent: false,
-	}
-
-	key := datastore.NewKey(ctx, InvitationEntityName, "", 0, nil)
-	if _, err := datastore.Put(ctx, key, &newInvitation); err != nil {
-		log.Errorf(ctx, "could not create invitation: %v", err)
-		http.Error(w, "Could not create invitation", 500)
-		return
-	}
-
-	log.Infof(ctx, "created a new invitation for %v", email)
-
-	http.Redirect(w, r, "/invite", http.StatusSeeOther)
+// newUserFiller fills the new user sign-up page template.
+type newUserFiller struct {
+	InvitationUID string
+	Email         string
 }
 
 // serveNewUserPage serves the page that can be used to create a new user from
@@ -208,26 +127,4 @@ func handleNewUserForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-// requireLogin is middleware that requires the user be logged in.
-func requireLogin(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := appengine.NewContext(r)
-
-		loginSession, err := sessionStore.Get(r, "login")
-		if err != nil {
-			http.Error(w, "Could not decode session", http.StatusInternalServerError)
-			log.Errorf(ctx, "could not decode session: %v", err)
-			return
-		}
-
-		if loginSession.IsNew {
-			log.Infof(ctx, "No session exists, redirecting to login")
-			http.Redirect(w, r, "/login", http.StatusFound)
-			return
-		}
-
-		next(w, r)
-	})
 }

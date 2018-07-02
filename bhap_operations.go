@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -15,7 +14,7 @@ import (
 func handleReadyForDiscussion(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
-	if op.bhap.Author != op.userKey {
+	if !op.bhap.Author.Equal(op.userKey) {
 		http.Error(w, "Only authors may mark a BHAP as ready for discussion",
 			http.StatusForbidden)
 		log.Warningf(ctx, "request from non-author denied")
@@ -43,7 +42,7 @@ func handleReadyForDiscussion(op bhapOperator, w http.ResponseWriter, r *http.Re
 func handleVoteAccept(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
-	if op.bhap.Author == op.userKey {
+	if op.bhap.Author.Equal(op.userKey) {
 		http.Error(w, "Authors may not vote on their own BHAP", http.StatusBadRequest)
 		log.Warningf(ctx, "request from non-author denied")
 		return
@@ -56,12 +55,8 @@ func handleVoteAccept(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vote := vote{
-		onBHAP: op.bhapKey,
-		byUser: op.userKey,
-		value:  acceptedStatus}
-	key := datastore.NewIncompleteKey(ctx, voteEntityName, op.bhapKey)
-	if _, err := datastore.Put(ctx, key, &vote); err != nil {
+	err := setVoteForBHAP(ctx, op.bhapKey, op.userKey, acceptedStatus)
+	if err != nil {
 		log.Errorf(ctx, "could not create vote: %v", err)
 		http.Error(w, "Could not create vote", 500)
 		return
@@ -76,7 +71,7 @@ func handleVoteAccept(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 func handleVoteReject(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
-	if op.bhap.Author == op.userKey {
+	if op.bhap.Author.Equal(op.userKey) {
 		http.Error(w, "Authors may not vote on their own BHAP", http.StatusBadRequest)
 		log.Warningf(ctx, "request from non-author denied")
 		return
@@ -89,12 +84,8 @@ func handleVoteReject(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vote := vote{
-		onBHAP: op.bhapKey,
-		byUser: op.userKey,
-		value:  rejectedStatus}
-	key := datastore.NewIncompleteKey(ctx, voteEntityName, nil)
-	if _, err := datastore.Put(ctx, key, &vote); err != nil {
+	err := setVoteForBHAP(ctx, op.bhapKey, op.userKey, rejectedStatus)
+	if err != nil {
 		log.Errorf(ctx, "could not create vote: %v", err)
 		http.Error(w, "Could not create vote", 500)
 		return
@@ -109,7 +100,7 @@ func handleVoteReject(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 func handleWithdraw(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
-	if op.bhap.Author != op.userKey {
+	if !op.bhap.Author.Equal(op.userKey) {
 		http.Error(w, "Only authors may withdraw a BHAP",
 			http.StatusForbidden)
 		log.Warningf(ctx, "request from non-author denied")
@@ -131,42 +122,4 @@ func handleWithdraw(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
-}
-
-// checkVotes counts up all votes for a BHAP and changes its status if
-// necessary.
-func checkVotes(ctx context.Context, op bhapOperator) error {
-	votes, err := votesForBHAP(ctx, op.bhapKey)
-	if err != nil {
-		return err
-	}
-
-	accepted := 0
-	rejected := 0
-	for _, vote := range votes {
-		if vote.value == acceptedStatus {
-			accepted++
-		} else if vote.value == rejectedStatus {
-			rejected++
-		}
-	}
-
-	userCnt, err := datastore.NewQuery(userEntityName).Count(ctx)
-	if err != nil {
-		return fmt.Errorf("counting users: %v", err)
-	}
-
-	if accepted > userCnt/2 {
-		op.bhap.Status = acceptedStatus
-		log.Infof(ctx, "marked BHAP %v as accepted", op.bhap.ID)
-	} else if rejected > userCnt/2 {
-		op.bhap.Status = rejectedStatus
-		log.Infof(ctx, "marked BHAP %v as rejected", op.bhap.ID)
-	}
-
-	if _, err := datastore.Put(ctx, op.bhapKey, &op.bhap); err != nil {
-		return fmt.Errorf("saving BHAP: %v", err)
-	}
-
-	return nil
 }

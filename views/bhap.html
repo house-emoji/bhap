@@ -2,7 +2,7 @@
 
 <html>
   <head>
-    <title>BHAP {{.PaddedID}} — {{.Title}}</title>
+    <title>BHAP {{.PaddedID}}</title>
   </head>
 
   <body>
@@ -40,22 +40,27 @@
     <div>
       {{if .VotingOptions.ShowReadyForDiscussion}}
         <form action="/bhap/{{.ID}}/ready-for-discussion" method="POST">
-          <button type="button">Ready for Discussion</button>
+          <input type="submit" value="Ready for Discussion">
         </form>
       {{end}}
       {{if .VotingOptions.ShowAccept}}
         <form action="/bhap/{{.ID}}/vote-accept" method="POST">
-          <button type="button">Vote to Accept</button>
+          <input type="submit" value="Vote to Accept">
         </form>
       {{end}}
       {{if .VotingOptions.ShowReject}}
-        <button type="button">Vote to Reject</button>
+        <form action="/bhap/{{.ID}}/vote-reject" method="POST">
+          <input type="submit" value="Vote to Reject">
+        </form>
       {{end}}
       {{if .VotingOptions.ShowWithdraw}}
-        <button type="button">Withdraw</button>
+        <form action="/bhap/{{.ID}}/withdraw" method="POST">
+          <input type="submit" value="Withdraw">
+        </form>
       {{end}}
       {{if .VotingOptions.ShowReplace}}
-        <button type="button">Vote to Mark as Replaced</button>
+        <!-- TODO(velovix): Add support for mark as replaced-->
+        <!--<button type="button">Vote to Mark as Replaced</button>-->
       {{end}}
     </div>
 
