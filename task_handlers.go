@@ -33,7 +33,7 @@ func sendInvitations(w http.ResponseWriter, r *http.Request) {
 	for i, unsent := range unsents {
 		var buf bytes.Buffer
 		filler := invitationFiller{
-			CreateAccountURL: "https://the-bhaps.appspot.com/invitation/" + unsent.UID,
+			CreateAccountURL: "https://the-bhaps.appspot.com/new-user/" + unsent.UID,
 		}
 		if err := invitationTemplate.Execute(&buf, filler); err != nil {
 			log.Errorf(ctx, "failed to execute email invitation template: %v", err)
