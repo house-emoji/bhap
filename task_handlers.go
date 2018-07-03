@@ -42,7 +42,7 @@ func sendInvitations(w http.ResponseWriter, r *http.Request) {
 		}
 
 		message := mail.Message{
-			Sender:  "BHAP Invitations <invitations@the-bhaps.appspot.com>",
+			Sender:  "BHAP Invitations <invitations@the-bhaps.appspotmail.com>",
 			To:      []string{unsent.Email},
 			Subject: InvitationSubject,
 			Body:    buf.String(),
