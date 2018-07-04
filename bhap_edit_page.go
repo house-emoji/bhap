@@ -70,7 +70,7 @@ func serveBHAPEditPage(w http.ResponseWriter, r *http.Request) {
 
 	if !loadedBHAP.Author.Equal(userKey) {
 		http.Error(w, "Only authors may edit a BHAP", http.StatusForbidden)
-		log.Warningf(ctx, "request to edit a non-draft")
+		log.Warningf(ctx, "request to edit by a non-author")
 		return
 	}
 
