@@ -106,8 +106,6 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Infof(ctx, "%+v", votingOpts)
 
-	editable := loadedBHAP.Author.Equal(userKey) && loadedBHAP.Status == draftStatus
-
 	filler := bhapPageFiller{
 		ID:            loadedBHAP.ID,
 		PaddedID:      fmt.Sprintf("%04d", loadedBHAP.ID),
@@ -117,7 +115,7 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 		Status:        loadedBHAP.Status,
 		CreatedDate:   loadedBHAP.CreatedDate.Format(dateFormat),
 		VotingOptions: votingOpts,
-		Editable:      editable,
+		Editable:      isEditable(loadedBHAP.Status),
 		HTMLContent:   template.HTML(html),
 	}
 	showTemplate(ctx, w, bhapTemplate, filler)

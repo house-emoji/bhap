@@ -46,6 +46,13 @@ func serveBHAPEditPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !isEditable(loadedBHAP.Status) {
+		http.Error(w, "Only draft or discussion BHAPs may be edited",
+			http.StatusBadRequest)
+		log.Warningf(ctx, "request to edit a non-draft or non-discussion proposal")
+		return
+	}
+
 	var author user
 	if err := datastore.Get(ctx, loadedBHAP.Author, &author); err != nil {
 		log.Errorf(ctx, "Error loading user: %v", err)
@@ -89,10 +96,10 @@ func handleEdit(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if op.bhap.Status != draftStatus {
-		http.Error(w, "Only draft BHAPs may be edited",
+	if !isEditable(op.bhap.Status) {
+		http.Error(w, "Only draft or discussion BHAPs may be edited",
 			http.StatusBadRequest)
-		log.Warningf(ctx, "request to edit a non-draft")
+		log.Warningf(ctx, "request to edit a non-draft or non-discussion proposal")
 		return
 	}
 
@@ -108,4 +115,8 @@ func handleEdit(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	log.Infof(ctx, "Updated BHAP %v:, %v", op.bhap.ID, op.bhap.Title)
 
 	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
+}
+
+func isEditable(bhapStatus status) bool {
+	return bhapStatus == draftStatus || bhapStatus == discussionStatus
 }
