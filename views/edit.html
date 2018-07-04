@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Editing BHAP {{.PaddedID}}</title>
+  </head>
+
+  <body>
+    <h1>Editing BHAP {{.PaddedID}}</h1>
+
+    <form action="/bhap/{{.ID}}/edit" method="post">
+      <p>Title</p>
+      <input type="text" name="title" value="{{.Title}}"/>
+
+      <p>Content</p>
+      <textarea rows="8" cols="50" name="content">{{.Content}}</textarea>
+
+      <br/><br/>
+
+      <input type="submit"/>
+    </form>
+  </body>
+</html>

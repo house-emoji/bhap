@@ -36,6 +36,14 @@
       </tr>
     </table>
 
+    <div>
+      {{if .Editable}}
+        <form action="/bhap/{{.ID}}/edit" method="GET">
+          <input type="submit" value="Edit"/>
+        </form>
+      {{end}}
+    </div>
+
     <!-- Show voting options -->
     <div>
       {{if .VotingOptions.ShowReadyForDiscussion}}

@@ -25,6 +25,7 @@ type bhapPageFiller struct {
 	Status        status
 	CreatedDate   string
 	VotingOptions votingOptions
+	Editable      bool
 	HTMLContent   template.HTML
 }
 
@@ -76,7 +77,7 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the current logged in user
-	currUser, userKey, err := userFromSession(ctx, r)
+	_, userKey, err := userFromSession(ctx, r)
 	if err != nil {
 		http.Error(w, "Could not read session", http.StatusInternalServerError)
 		log.Errorf(ctx, "could not get session email: %v", err)
@@ -88,12 +89,12 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	if userKey != nil {
 		switch loadedBHAP.Status {
 		case draftStatus:
-			if author.Email == currUser.Email {
+			if loadedBHAP.Author.Equal(userKey) {
 				votingOpts.ShowReadyForDiscussion = true
 				votingOpts.ShowWithdraw = true
 			}
 		case discussionStatus:
-			if author.Email == currUser.Email {
+			if loadedBHAP.Author.Equal(userKey) {
 				votingOpts.ShowWithdraw = true
 			} else {
 				votingOpts.ShowAccept = true
@@ -105,6 +106,8 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Infof(ctx, "%+v", votingOpts)
 
+	editable := loadedBHAP.Author.Equal(userKey) && loadedBHAP.Status == draftStatus
+
 	filler := bhapPageFiller{
 		ID:            loadedBHAP.ID,
 		PaddedID:      fmt.Sprintf("%04d", loadedBHAP.ID),
@@ -114,6 +117,7 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 		Status:        loadedBHAP.Status,
 		CreatedDate:   loadedBHAP.CreatedDate.Format(dateFormat),
 		VotingOptions: votingOpts,
+		Editable:      editable,
 		HTMLContent:   template.HTML(html),
 	}
 	showTemplate(ctx, w, bhapTemplate, filler)

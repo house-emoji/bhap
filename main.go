@@ -22,6 +22,8 @@ func main() {
 	r.HandleFunc("/bhap", serveListPage)
 	r.HandleFunc("/bhap/{id}", serveBHAPPage).
 		Methods("GET")
+	r.HandleFunc("/bhap/{id}/edit", serveBHAPEditPage).
+		Methods("GET")
 
 	r.HandleFunc("/bhap/{id}/ready-for-discussion",
 		setUpBHAPOperator(handleReadyForDiscussion)).
@@ -34,6 +36,9 @@ func main() {
 		Methods("POST")
 	r.HandleFunc("/bhap/{id}/withdraw",
 		setUpBHAPOperator(handleWithdraw)).
+		Methods("POST")
+	r.HandleFunc("/bhap/{id}/edit",
+		setUpBHAPOperator(handleEdit)).
 		Methods("POST")
 	// TODO(velovix): Implement replaced vote
 	/*r.HandleFunc("/bhap/{id}/vote-replace").
