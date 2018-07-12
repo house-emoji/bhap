@@ -28,6 +28,9 @@ func main() {
 	r.HandleFunc("/bhap/{id}/ready-for-discussion",
 		setUpBHAPOperator(handleReadyForDiscussion)).
 		Methods("POST")
+	r.HandleFunc("/bhap/{id}/delete-vote",
+		setUpBHAPOperator(handleDeleteVote)).
+		Methods("GET")
 	r.HandleFunc("/bhap/{id}/vote-accept",
 		setUpBHAPOperator(handleVoteAccept)).
 		Methods("POST")
@@ -44,7 +47,7 @@ func main() {
 	/*r.HandleFunc("/bhap/{id}/vote-replace").
 	Methods("POST")*/
 
-	r.Handle("/propose", requireLogin(serveProposePage)).
+	r.Handle("/propose", requireLogin(serveNewBHAPPage)).
 		Methods("GET")
 	r.HandleFunc("/propose", handleNewBHAPForm).
 		Methods("POST")

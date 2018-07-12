@@ -15,7 +15,10 @@
         <div class="login-status">
           {{if .LoggedIn}}
             <p>{{.FullName}}</p>
-            <a href="">Log Out</a>
+            <a href="/logout">Log Out</a>
+          {{else}}
+            <p>You are not logged in.</p>
+            <a href="/login">Log In</a>
           {{end}}
         </div>
 
@@ -29,37 +32,43 @@
           <header>BHAP {{printf "%04d" .NewBHAP.ID}}: {{.NewBHAP.Title}}</header>
           <p>{{.NewBHAP.ShortDescription}}</p>
           <div class="vote-container">
-            <a href="/bhap/{{.ID}}">Vote Now</a>
+            <a href="/bhap/{{.NewBHAP.ID}}">Vote Now</a>
           </div>
         </div>
       {{end}}
 
-      <div class="bhap-list-section">
-        <header>Accepted BHAPs</header>
-        <hr>
-        {{range .ActiveBHAPs}}
-          <a href="/bhap/{{.ID}}">BHAP {{.ID}}: {{.Title}}</a>
-          <br>
-        {{end}}
-      </div>
+      {{if .ActiveBHAPs}}
+        <div class="bhap-list-section">
+          <header>Accepted BHAPs</header>
+          <hr>
+          {{range .ActiveBHAPs}}
+            <a href="/bhap/{{.ID}}">BHAP {{printf "%04d" .ID}}: {{.Title}}</a>
+            <br>
+          {{end}}
+        </div>
+      {{end}}
 
-      <div class="bhap-list-section">
-        <header>Rejected BHAPs</header>
-        <hr>
-        {{range .RejectedBHAPs}}
-          <a href="/bhap/{{.ID}}">BHAP {{.ID}}: {{.Title}}</a>
-          <br>
-        {{end}}
-      </div>
+      {{if .RejectedBHAPs}}
+        <div class="bhap-list-section">
+          <header>Rejected BHAPs</header>
+          <hr>
+          {{range .RejectedBHAPs}}
+            <a href="/bhap/{{.ID}}">BHAP {{printf "%04d" .ID}}: {{.Title}}</a>
+            <br>
+          {{end}}
+        </div>
+      {{end}}
 
-      <div class="bhap-list-section">
-        <header>Draft BHAPs</header>
-        <hr>
-        {{range .DraftBHAPs}}
-          <a href="/bhap/{{.ID}}">BHAP {{printf "%04d" .ID}}: {{.Title}}</a>
-          <br>
-        {{end}}
-      </div>
+      {{if .DraftBHAPs}}
+        <div class="bhap-list-section">
+          <header>Draft BHAPs</header>
+          <hr>
+          {{range .DraftBHAPs}}
+            <a href="/bhap/{{.ID}}">BHAP {{printf "%04d" .ID}}: {{.Title}}</a>
+            <br>
+          {{end}}
+        </div>
+      {{end}}
     </div>
   </body>
 </html>

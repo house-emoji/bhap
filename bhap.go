@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 )
 
 // status describes the current status of a BHAP.
@@ -122,13 +123,17 @@ func bhapsByStatus(ctx context.Context, statuses ...status) ([]bhap, error) {
 		}
 	}
 
+	log.Infof(ctx, "ResultSet: %+v", resultSet)
+
 	// Sort the results
-	sorted := make([]bhap, len(resultSet))
+	sorted := make([]bhap, 0)
 	for result, _ := range resultSet {
 		sorted = append(sorted, result)
 	}
 	sort.Slice(sorted, func(i, j int) bool {
 		return sorted[i].ID < sorted[j].ID
 	})
+
+	log.Infof(ctx, "Sorted: %+v", sorted)
 	return sorted, nil
 }

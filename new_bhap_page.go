@@ -22,8 +22,8 @@ type proposePageFiller struct {
 	FullName string
 }
 
-// serveProposePage serves a page for creating new BHAPs.
-func serveProposePage(w http.ResponseWriter, r *http.Request) {
+// serveNewBHAPPage serves a page for creating new BHAPs.
+func serveNewBHAPPage(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	// Get the current logged in user
@@ -47,6 +47,7 @@ func handleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	title := r.FormValue("title")
+	shortDescription := r.FormValue("shortDescription")
 	content := r.FormValue("content")
 
 	// Find what the ID of the new BHAP should be
@@ -66,13 +67,14 @@ func handleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newBHAP := bhap{
-		ID:           newID,
-		Title:        title,
-		LastModified: time.Now(),
-		Author:       userKey,
-		Status:       draftStatus,
-		CreatedDate:  time.Now(),
-		Content:      content,
+		ID:               newID,
+		Title:            title,
+		ShortDescription: shortDescription,
+		LastModified:     time.Now(),
+		Author:           userKey,
+		Status:           draftStatus,
+		CreatedDate:      time.Now(),
+		Content:          content,
 	}
 
 	// Save the new BHAP

@@ -81,6 +81,8 @@ func logout(w http.ResponseWriter, r *http.Request) {
 		log.Errorf(ctx, "could not log out: %v", err)
 		return
 	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func randomBackgroundURL() (string, error) {

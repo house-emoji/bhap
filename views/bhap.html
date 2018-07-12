@@ -2,80 +2,105 @@
 
 <html>
   <head>
-    <title>BHAP {{.PaddedID}}</title>
+    <title>BHAP {{printf "%04d" .BHAP.ID}}</title>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
   </head>
 
   <body>
-    <h1>BHAP {{.PaddedID}} — {{.Title}}</h1>
+    <div id="parent-container">
+      <nav>
+        <header>BHAP {{printf "%04d" .BHAP.ID}}</header>
 
-    <!-- Overview table -->
-    <table>
-      <tr>
-        <th>BHAP:</th>
-        <td>{{.PaddedID}}</td>
-      </tr>
-      <tr>
-        <th>Title:</th>
-        <td>{{.Title}}</td>
-      </tr>
-      <tr>
-        <th>Last Modified:</th>
-        <td>{{.LastModified}}</td>
-      </tr>
-      <tr>
-        <th>Author:</th>
-        <td>{{.Author}}</td>
-      </tr>
-      <tr>
-        <th>Status:</th>
-        <td>{{.Status}}</td>
-      </tr>
-      <tr>
-        <th>Created Date:</th>
-        <td>{{.CreatedDate}}</td>
-      </tr>
-    </table>
+        <div class="login-status">
+          {{if .LoggedIn}}
+            <p>{{.FullName}}</p>
+            <a href="/logout">Log Out</a>
+          {{else}}
+            <p>You are not logged in.</p>
+            <a href="/login">Log In</a>
+          {{end}}
+        </div>
 
-    <div>
-      {{if .Editable}}
-        <form action="/bhap/{{.ID}}/edit" method="GET">
-          <input type="submit" value="Edit"/>
+        <form action="/" method="GET">
+          <input type="submit" value="⮜ Back to BHAPs">
         </form>
-      {{end}}
-    </div>
+      </nav>
 
-    <!-- Show voting options -->
-    <div>
-      {{if .VotingOptions.ShowReadyForDiscussion}}
-        <form action="/bhap/{{.ID}}/ready-for-discussion" method="POST">
-          <input type="submit" value="Ready for Discussion">
-        </form>
-      {{end}}
-      {{if .VotingOptions.ShowAccept}}
-        <form action="/bhap/{{.ID}}/vote-accept" method="POST">
-          <input type="submit" value="Vote to Accept">
-        </form>
-      {{end}}
-      {{if .VotingOptions.ShowReject}}
-        <form action="/bhap/{{.ID}}/vote-reject" method="POST">
-          <input type="submit" value="Vote to Reject">
-        </form>
-      {{end}}
-      {{if .VotingOptions.ShowWithdraw}}
-        <form action="/bhap/{{.ID}}/withdraw" method="POST">
-          <input type="submit" value="Withdraw">
-        </form>
-      {{end}}
-      {{if .VotingOptions.ShowReplace}}
-        <!-- TODO(velovix): Add support for mark as replaced-->
-        <!--<button type="button">Vote to Mark as Replaced</button>-->
-      {{end}}
-    </div>
+      <div class="bhap-title">{{.BHAP.Title}}</div>
 
-    <hr>
+      <p class="short-description">{{.BHAP.ShortDescription}}</p>
 
-    <div>
-      {{.HTMLContent}}
+      <div class="voting-status">
+        <p>Voting Status:</p>
+        <div class="visual-vote-breakdown">
+          <div class="accepted" style="flex-grow:{{.PercentAccepted}}">
+            {{if .PercentAccepted}}
+              {{.PercentAccepted}}%
+            {{end}}
+          </div>
+          <div class="rejected" style="flex-grow:{{.PercentRejected}}">
+            {{if .PercentRejected}}
+              {{.PercentRejected}}%
+            {{end}}
+          </div>
+          <div class="undecided" style="flex-grow:{{.PercentUndecided}}"></div>
+        </div>
+        <p>{{.VoteCount}}/{{.UserCount}} members<br>have voted</p>
+      </div>
+
+      {{if eq .OptionsMode "draftNotAuthor"}}
+        <div class="options-container">
+          <p>
+            This BHAP is a draft and may not yet be voted on.
+          </p>
+        </div>
+      {{else if eq .OptionsMode "draftAuthor"}}
+        <div class="options-container">
+          <div class="vote-buttons">
+            <form action="/bhap/{{.BHAP.ID}}/ready-for-discussion" method="POST">
+              <input type="submit" class="vote-button reject" value="📣 Ready For Discussion">
+            </form>
+          </div>
+          <p>
+            This BHAP is a draft. If the proposal is ready for voting, mark it
+            as "Ready for Discussion".
+          </p>
+        </div>
+      {{else if eq .OptionsMode "discussionAuthor"}}
+        <div class="options-container">
+          <p>
+            This BHAP is being voted on, but you can't vote since you're the
+            author!
+          </p>
+        </div>
+      {{else if eq .OptionsMode "discussionNoVote"}}
+        <div class="options-container">
+          <div class="vote-buttons">
+            <form action="/bhap/{{.BHAP.ID}}/vote-accept" method="POST">
+              <input type="submit" class="vote-button accept" value="✔ Accept BHAP">
+            </form>
+            <form action="/bhap/{{.BHAP.ID}}/vote-reject" method="POST">
+              <input type="submit" class="vote-button reject" value="✖ Reject BHAP">
+            </form>
+          </div>
+          <p>You can change your vote until all members have voted.</p>
+        </div>
+      {{else if eq .OptionsMode "discussionVoted"}}
+        <div class="options-container">
+          <p>
+            <strong>You voted to {{.SelectedVote}} this BHAP.</strong>
+            You can change your vote until all members have voted.
+          </p>
+          <div class="change-vote-container">
+            <a href="/bhap/{{.BHAP.ID}}/delete-vote">Change My Vote</a>
+          </div>
+        </div>
+      {{end}}
+
+      <div class="proposal-content">
+        {{.HTMLContent}}
+      </div>
     </div>
   </body>
 </html>

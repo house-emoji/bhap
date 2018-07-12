@@ -38,13 +38,52 @@ func handleReadyForDiscussion(op bhapOperator, w http.ResponseWriter, r *http.Re
 	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
 }
 
+// handleDeleteVote handles requests to delete a submitted vote.
+func handleDeleteVote(op bhapOperator, w http.ResponseWriter, r *http.Request) {
+	ctx := appengine.NewContext(r)
+
+	if op.bhap.Author.Equal(op.userKey) {
+		http.Error(w, "Authors may not vote on their own BHAP", http.StatusBadRequest)
+		log.Warningf(ctx, "request from author denied")
+		return
+	}
+
+	if op.bhap.Status != discussionStatus {
+		http.Error(w, "Only discussion BHAPs can have votes deleted",
+			http.StatusBadRequest)
+		log.Warningf(ctx, "vote delete request on non-discussion BHAP denied")
+		return
+	}
+
+	_, voteKey, err := voteForBHAP(ctx, op.bhapKey, op.userKey)
+	if err != nil {
+		http.Error(w, "Could not load vote", http.StatusInternalServerError)
+		log.Errorf(ctx, "getting vote: %v", err)
+		return
+	}
+	if voteKey == nil {
+		http.Error(w, "No vote has been cast", http.StatusNotFound)
+		log.Warningf(ctx, "vote delete request on non-existent vote denied")
+		return
+	}
+
+	err = datastore.Delete(ctx, voteKey)
+	if err != nil {
+		http.Error(w, "Could not delete vote", http.StatusInternalServerError)
+		log.Errorf(ctx, "deleting vote: %v", err)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
+}
+
 // handleVoteAccept handles requests to submit an accept vote on the BHAP.
 func handleVoteAccept(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	if op.bhap.Author.Equal(op.userKey) {
 		http.Error(w, "Authors may not vote on their own BHAP", http.StatusBadRequest)
-		log.Warningf(ctx, "request from non-author denied")
+		log.Warningf(ctx, "request from author denied")
 		return
 	}
 

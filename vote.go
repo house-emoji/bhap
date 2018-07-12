@@ -16,7 +16,8 @@ type vote struct {
 	Value  status
 }
 
-func votesForBHAP(ctx context.Context, bhapKey *datastore.Key) ([]vote, error) {
+// allVotesForBHAP returns all the votes that have been cast for a given BHAP.
+func allVotesForBHAP(ctx context.Context, bhapKey *datastore.Key) ([]vote, error) {
 	var votes []vote
 	_, err := datastore.NewQuery(voteEntityName).
 		Ancestor(bhapKey).
@@ -26,6 +27,23 @@ func votesForBHAP(ctx context.Context, bhapKey *datastore.Key) ([]vote, error) {
 	}
 
 	return votes, nil
+}
+
+func voteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key) (vote, *datastore.Key, error) {
+	var votes []vote
+	keys, err := datastore.NewQuery(voteEntityName).
+		Ancestor(bhapKey).
+		Filter("ByUser =", userKey).
+		GetAll(ctx, &votes)
+	if err != nil {
+		return vote{}, nil, fmt.Errorf("getting user's vote: %v", err)
+	}
+
+	if len(votes) == 0 {
+		return vote{}, nil, nil
+	} else {
+		return votes[0], keys[0], nil
+	}
 }
 
 // setVoteForBHAP sets the vote of the user for the given BHAP to a value,
@@ -65,9 +83,9 @@ func setVoteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key, value 
 }
 
 // checkVotes counts up all votes for a BHAP and changes its status if
-// necessary.
+// necessary. All users must vote for the BHAP to be finalized.
 func checkVotes(ctx context.Context, op bhapOperator) error {
-	votes, err := votesForBHAP(ctx, op.bhapKey)
+	votes, err := allVotesForBHAP(ctx, op.bhapKey)
 	if err != nil {
 		return err
 	}
@@ -87,12 +105,14 @@ func checkVotes(ctx context.Context, op bhapOperator) error {
 		return fmt.Errorf("counting users: %v", err)
 	}
 
-	if accepted > userCnt/2 {
-		op.bhap.Status = acceptedStatus
-		log.Infof(ctx, "marked BHAP %v as accepted", op.bhap.ID)
-	} else if rejected > userCnt/2 {
-		op.bhap.Status = rejectedStatus
-		log.Infof(ctx, "marked BHAP %v as rejected", op.bhap.ID)
+	if accepted+rejected == userCnt-1 {
+		if accepted > userCnt/2 {
+			op.bhap.Status = acceptedStatus
+			log.Infof(ctx, "marked BHAP %v as accepted", op.bhap.ID)
+		} else if rejected > userCnt/2 {
+			op.bhap.Status = rejectedStatus
+			log.Infof(ctx, "marked BHAP %v as rejected", op.bhap.ID)
+		}
 	}
 
 	if _, err := datastore.Put(ctx, op.bhapKey, &op.bhap); err != nil {
