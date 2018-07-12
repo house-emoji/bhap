@@ -1,31 +1,30 @@
 <!DOCTYPE html>
 
-<html>
+<html style="background:url(&quot;{{.BackgroundURL}}&quot;);">
   <head>
     <title>New User</title>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/login.css">
   </head>
 
   <body>
-    <h1>New User</h1>
+    <div class="contents">
+      <header>New User</header>
 
-    <p>
-      Welcome, {{.Email}}! Please complete the following forms to become a
-      member of the BHAP consortium.
-    </p>
+      <p>
+        Welcome, {{.Email}}! Please create an account to join the consortium
+        and begin voting on 🏡 proposals.
+      </p>
 
-    <form action="/new-user/{{.InvitationUID}}" method="post">
-      <p>First Name</p>
-      <input type="text" name="firstName"/>
-
-      <p>Last Name</p>
-      <input type="text" name="lastName"/>
-
-      <p>Password</p>
-      <input type="password" name="password"/>
-
-      <br/><br/>
-
-      <input type="submit"/>
-    </form>
+      <form action="/new-user/{{.InvitationUID}}" method="post">
+        <input type="text" name="firstName" placeholder="First Name">
+        <br>
+        <input type="text" name="lastName" placeholder="Last Name">
+        <br>
+        <input type="password" name="password" placeholder="Password">
+        <br>
+        <input type="submit" value="Create Account">
+      </form>
+    </div>
   </body>
 </html>

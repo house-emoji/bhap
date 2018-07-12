@@ -17,9 +17,29 @@ var (
 	newUserTemplate = compileTempl("views/new-user.html")
 )
 
+type proposePageFiller struct {
+	LoggedIn bool
+	FullName string
+}
+
 // serveProposePage serves a page for creating new BHAPs.
 func serveProposePage(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "views/propose.html")
+	ctx := appengine.NewContext(r)
+
+	// Get the current logged in user
+	currUser, userKey, err := userFromSession(ctx, r)
+	if err != nil {
+		http.Error(w, "Could not read session", http.StatusInternalServerError)
+		log.Errorf(ctx, "could not get session email: %v", err)
+		return
+	}
+
+	filler := proposePageFiller{
+		LoggedIn: userKey != nil,
+		FullName: currUser.FirstName + " " + currUser.LastName,
+	}
+
+	showTemplate(ctx, w, proposeTemplate, filler)
 }
 
 // handleNewBHAPForm creates a new BHAP based on information passed from a POST form.

@@ -3,27 +3,63 @@
 <html>
   <head>
     <title>BHAP List</title>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
   </head>
 
   <body>
-    {{if .LoggedIn}}
-      <p>
-        Logged in as {{.Email}}.
-        <a href="/logout">Log out.</a>
-      </p>
-    {{end}}
-    <h1>All Proposals</h1>
+    <div id="parent-container">
+      <nav>
+        <header>BHAP Proposals</header>
 
-    <a href="/propose">Propose a BHAP</a>
+        <div class="login-status">
+          {{if .LoggedIn}}
+            <p>{{.FullName}}</p>
+            <a href="">Log Out</a>
+          {{end}}
+        </div>
 
-    <ul>
-      {{range .Items}}
-        <li>
-          <a href="/bhap/{{.ID}}">
-            BHAP {{.ID | printf "%04d"}}: {{.Title}}
-          </a>
-        </li>
+        <form action="/propose" method="GET">
+          <input type="submit" value="Propose a BHAP ⮞">
+        </form>
+      </nav>
+
+      {{if .NewBHAP}}
+        <div class="new-bhap">
+          <header>BHAP {{printf "%04d" .NewBHAP.ID}}: {{.NewBHAP.Title}}</header>
+          <p>{{.NewBHAP.ShortDescription}}</p>
+          <div class="vote-container">
+            <a href="/bhap/{{.ID}}">Vote Now</a>
+          </div>
+        </div>
       {{end}}
-    </ul>
+
+      <div class="bhap-list-section">
+        <header>Accepted BHAPs</header>
+        <hr>
+        {{range .ActiveBHAPs}}
+          <a href="/bhap/{{.ID}}">BHAP {{.ID}}: {{.Title}}</a>
+          <br>
+        {{end}}
+      </div>
+
+      <div class="bhap-list-section">
+        <header>Rejected BHAPs</header>
+        <hr>
+        {{range .RejectedBHAPs}}
+          <a href="/bhap/{{.ID}}">BHAP {{.ID}}: {{.Title}}</a>
+          <br>
+        {{end}}
+      </div>
+
+      <div class="bhap-list-section">
+        <header>Draft BHAPs</header>
+        <hr>
+        {{range .DraftBHAPs}}
+          <a href="/bhap/{{.ID}}">BHAP {{printf "%04d" .ID}}: {{.Title}}</a>
+          <br>
+        {{end}}
+      </div>
+    </div>
   </body>
 </html>

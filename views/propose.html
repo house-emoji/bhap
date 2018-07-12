@@ -3,21 +3,45 @@
 <html>
   <head>
     <title>Propose BHAP</title>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
   </head>
 
   <body>
-    <h1>Propose BHAP</h1>
+    <div id="parent-container">
+      <nav>
+        <header>Propose a BHAP</header>
 
-    <form action="/propose" method="post">
-      <p>Title</p>
-      <input type="text" name="title"/>
+        <div class="login-status">
+          {{if .LoggedIn}}
+            <p>{{.FullName}}</p>
+            <a href="">Log Out</a>
+          {{end}}
+        </div>
 
-      <p>Content</p>
-      <textarea rows="8" cols="50" name="content"></textarea>
+        <form action="/" method="GET">
+          <input type="submit" value="⮜ Back to BHAPs">
+        </form>
+      </nav>
 
-      <br/><br/>
+      <div class="proposal-form-container">
+        <form action="/propose" method="POST">
+          <h2>Title</h2>
+          <p>(Do not include BHAP #)</p>
+          <input type="text" name="title"/>
 
-      <input type="submit"/>
-    </form>
+          <h2>Short Description</h2>
+          <input type="text" name="shortDescription"/>
+
+          <h2>BHAP Conditions</h2>
+          <p>Describe exactly what you want the BHAP to entail</p>
+          <textarea name="content"></textarea>
+
+          <br/><br/>
+
+          <input type="submit"/>
+        </form>
+      </div>
+    </div>
   </body>
 </html>

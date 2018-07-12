@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css?family=Archivo+Black|Raleway');
+
+body {
+	background-color: #171927;
+	color: #e0e0e0;
+	font-family: 'Raleway', sans-serif;
+
+	padding-top: 2em;
+}
+
+nav {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+}
+
+nav .login-status {
+	text-align: right;
+}
+
+nav .login-status p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+nav .login-status a {
+	font-weight: bold;
+	color: #e0e0e0;
+}
+
+nav header {
+	font-size: 320%;
+	font-family: 'Archivo Black', sans-serif;
+	text-transform: uppercase;
+}
+
+nav input { 
+	background-color: #e0e0e0;
+
+	border: none;
+	border-radius: 0.5em;
+
+	padding-left: 1em;
+	padding-right: 1em;
+	padding-top: 0.75em;
+	padding-bottom: 0.75em;
+
+	font-size: 130%;
+	font-family: 'Raleway', sans-serif;
+}
+
+.new-bhap {
+	background-color: #393b46;
+
+	margin-top: 4em;
+
+	padding-top: 1em;
+	padding-bottom: 1em;
+	padding-left: 7em;
+	padding-right: 5.5em;
+
+	background-image: url("/static/images/new-bhap-background.png");
+	background-repeat: no-repeat;
+}
+
+.new-bhap p {
+	font-size: 120%;
+}
+
+.new-bhap header {
+	font-size: 250%;
+	font-weight: bold;
+}
+
+.new-bhap .vote-container {
+	text-align: center;
+}
+
+.new-bhap .vote-container a {
+	font-size: 130%;
+	font-weight: bold;
+	color: #e0e0e0;
+}
+
+#parent-container {
+	margin: 0 auto;
+	max-width: 60em;
+}
+
+.bhap-list-section {
+	margin-top: 4em;
+}
+
+.bhap-list-section header {
+	font-size: 130%;
+	font-weight: bold;
+}
+
+.bhap-list-section li {
+
+}
+
+.bhap-list-section a {
+	font-size: 120%;
+	color: #e0e0e0;
+}
+
+.proposal-form-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.proposal-form-container h2 {
+	font-size: 140%;
+	font-weight: normal;
+	margin-bottom: 0.2em;
+}
+
+.proposal-form-container p {
+	margin-top: 0em;
+}
+
+.proposal-form-container form {
+	width: 30em;
+}
+
+.proposal-form-container input,textarea {
+	width: 100%;
+	padding: 15px;
+	margin: 0;
+
+	font-size: 120%;
+
+	background-color: rgba(255, 255, 255, 0.5);
+	border: 0;
+}
+
+.proposal-form-container textarea {
+	height: 12em;
+}
+
+.proposal-form-container input[type="submit"] {
+	background: white;
+
+	padding-top: 15px;
+	padding-bottom: 15px;
+	margin: 15px;
+
+	width: 100%;
+}

@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"sort"
 	"time"
 
 	"google.golang.org/appengine/datastore"
@@ -34,12 +36,13 @@ const bhapEntityName = "BHAP"
 // bhap contains info on a BHAP proposal. It is meant to be persisted in
 // Datastore.
 type bhap struct {
-	ID           int
-	Title        string
-	LastModified time.Time
-	Author       *datastore.Key
-	Status       status
-	CreatedDate  time.Time
+	ID               int
+	Title            string
+	ShortDescription string
+	LastModified     time.Time
+	Author           *datastore.Key
+	Status           status
+	CreatedDate      time.Time
 	// Stored in Markdown
 	Content string
 }
@@ -94,4 +97,38 @@ func allBHAPs(ctx context.Context) ([]bhap, error) {
 	}
 
 	return results, nil
+}
+
+// bhapsByStatus returns all BHAPs with the given status(es).
+func bhapsByStatus(ctx context.Context, statuses ...status) ([]bhap, error) {
+	allResults := make([][]bhap, len(statuses))
+
+	// Get BHAPs for every status
+	for i, status := range statuses {
+		_, err := datastore.NewQuery(bhapEntityName).
+			Order("ID").
+			Filter("Status =", status).
+			GetAll(ctx, &allResults[i])
+		if err != nil {
+			return nil, fmt.Errorf("finding %v BHAPs: %v", status, err)
+		}
+	}
+
+	// Combine the BHAP collections into a single set
+	resultSet := make(map[bhap]bool)
+	for _, section := range allResults {
+		for _, result := range section {
+			resultSet[result] = true
+		}
+	}
+
+	// Sort the results
+	sorted := make([]bhap, len(resultSet))
+	for result, _ := range resultSet {
+		sorted = append(sorted, result)
+	}
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].ID < sorted[j].ID
+	})
+	return sorted, nil
 }

@@ -1,17 +1,38 @@
 package main
 
 import (
+	"io/ioutil"
+	"math/rand"
 	"net/http"
+	"path"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
 )
 
-const minPasswordLength = 5
+var loginTemplate = compileTempl("views/login.html")
+
+type loginPageFiller struct {
+	BackgroundURL string
+}
 
 // serveLoginPage serves the page for logging in.
 func serveLoginPage(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "views/login.html")
+	ctx := appengine.NewContext(r)
+
+	backgroundURL, err := randomBackgroundURL()
+	if err != nil {
+		http.Error(w, "Error while looking for backgrounds",
+			http.StatusInternalServerError)
+		log.Errorf(ctx, "looking for backgrounds: %v", err)
+		return
+	}
+
+	filler := loginPageFiller{
+		BackgroundURL: backgroundURL,
+	}
+
+	showTemplate(ctx, w, loginTemplate, filler)
 }
 
 // handleLoginForm attempts to log the user in using credentials from a POST
@@ -60,4 +81,17 @@ func logout(w http.ResponseWriter, r *http.Request) {
 		log.Errorf(ctx, "could not log out: %v", err)
 		return
 	}
+}
+
+func randomBackgroundURL() (string, error) {
+	const backgroundPath = "static/images/backgrounds"
+
+	backgrounds, err := ioutil.ReadDir(backgroundPath)
+	if err != nil {
+		return "", err
+	}
+
+	backgroundName := backgrounds[rand.Intn(len(backgrounds))]
+
+	return path.Join("/", backgroundPath, backgroundName.Name()), nil
 }

@@ -12,10 +12,13 @@ import (
 	"google.golang.org/appengine/log"
 )
 
+const minPasswordLength = 5
+
 // newUserFiller fills the new user sign-up page template.
 type newUserFiller struct {
 	InvitationUID string
 	Email         string
+	BackgroundURL string
 }
 
 // serveNewUserPage serves the page that can be used to create a new user from
@@ -43,9 +46,18 @@ func serveNewUserPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	backgroundURL, err := randomBackgroundURL()
+	if err != nil {
+		http.Error(w, "Error while looking for backgrounds",
+			http.StatusInternalServerError)
+		log.Errorf(ctx, "looking for backgrounds: %v", err)
+		return
+	}
+
 	filler := newUserFiller{
 		InvitationUID: uid,
 		Email:         invite.Email,
+		BackgroundURL: backgroundURL,
 	}
 	showTemplate(ctx, w, newUserTemplate, filler)
 }
