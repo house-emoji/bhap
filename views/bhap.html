@@ -12,6 +12,12 @@
       <nav>
         <header>BHAP {{printf "%04d" .BHAP.ID}}</header>
 
+        <!--
+          A dummy div that provides space between the header and the login
+          status
+        -->
+        <div class="space-taker"></div>
+
         <div class="login-status">
           {{if .LoggedIn}}
             <p>{{.FullName}}</p>
@@ -27,7 +33,15 @@
         </form>
       </nav>
 
-      <div class="bhap-title">{{.BHAP.Title}}</div>
+      <div class="title-and-edit-container">
+        <div class="bhap-title">
+          {{.BHAP.Title}}
+        </div>
+
+        {{if .Editable}}
+          <a href="/bhap/{{.BHAP.ID}}/edit">(edit)</a>
+        {{end}}
+      </div>
 
       <p class="short-description">{{.BHAP.ShortDescription}}</p>
 
@@ -57,9 +71,9 @@
         </div>
       {{else if eq .OptionsMode "draftAuthor"}}
         <div class="options-container">
-          <div class="vote-buttons">
+          <div class="buttons-container">
             <form action="/bhap/{{.BHAP.ID}}/ready-for-discussion" method="POST">
-              <input type="submit" class="vote-button reject" value="📣 Ready For Discussion">
+              <input type="submit" class="vote-button reject" value="📣    Ready For Discussion">
             </form>
           </div>
           <p>
@@ -76,12 +90,12 @@
         </div>
       {{else if eq .OptionsMode "discussionNoVote"}}
         <div class="options-container">
-          <div class="vote-buttons">
+          <div class="buttons-container">
             <form action="/bhap/{{.BHAP.ID}}/vote-accept" method="POST">
-              <input type="submit" class="vote-button accept" value="✔ Accept BHAP">
+              <input type="submit" class="vote-button accept" value="✔   Accept BHAP">
             </form>
             <form action="/bhap/{{.BHAP.ID}}/vote-reject" method="POST">
-              <input type="submit" class="vote-button reject" value="✖ Reject BHAP">
+              <input type="submit" class="vote-button reject" value="✖    Reject BHAP">
             </form>
           </div>
           <p>You can change your vote until all members have voted.</p>
@@ -95,6 +109,14 @@
           <div class="change-vote-container">
             <a href="/bhap/{{.BHAP.ID}}/delete-vote">Change My Vote</a>
           </div>
+        </div>
+      {{else if eq .OptionsMode "accepted"}}
+        <div class="options-container">
+          <p>This BHAP has been accepted and is now in effect.</p>
+        </div>
+      {{else if eq .OptionsMode "rejected"}}
+        <div class="options-container">
+          <p>This BHAP has been rejected.</p>
         </div>
       {{end}}
 

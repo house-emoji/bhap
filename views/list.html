@@ -12,6 +12,12 @@
       <nav>
         <header>BHAP Proposals</header>
 
+        <!--
+          A dummy div that provides space between the header and the login
+          status
+        -->
+        <div class="space-taker"></div>
+
         <div class="login-status">
           {{if .LoggedIn}}
             <p>{{.FullName}}</p>
@@ -34,6 +40,17 @@
           <div class="vote-container">
             <a href="/bhap/{{.NewBHAP.ID}}">Vote Now</a>
           </div>
+        </div>
+      {{end}}
+
+      {{if .DiscussionBHAPs}}
+        <div class="bhap-list-section">
+          <header>Discussion BHAPs</header>
+          <hr>
+          {{range .DiscussionBHAPs}}
+            <a href="/bhap/{{.ID}}">BHAP {{printf "%04d" .ID}}: {{.Title}}</a>
+            <br>
+          {{end}}
         </div>
       {{end}}
 

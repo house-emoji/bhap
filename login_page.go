@@ -86,7 +86,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func randomBackgroundURL() (string, error) {
-	const backgroundPath = "static/images/backgrounds"
+	const backgroundPath = "static/backgrounds"
 
 	backgrounds, err := ioutil.ReadDir(backgroundPath)
 	if err != nil {

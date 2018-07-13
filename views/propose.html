@@ -12,6 +12,12 @@
       <nav>
         <header>Propose a BHAP</header>
 
+        <!--
+          A dummy div that provides space between the header and the login
+          status
+        -->
+        <div class="space-taker"></div>
+
         <div class="login-status">
           {{if .LoggedIn}}
             <p>{{.FullName}}</p>

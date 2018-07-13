@@ -18,13 +18,14 @@ var bhapTemplate = compileTempl("views/bhap.html")
 type optionsMode string
 
 const (
-	notLoggedIn      optionsMode = "notLoggedIn"
-	draftNotAuthor               = "draftNotAuthor"
-	draftAuthor                  = "draftAuthor"
-	discussionAuthor             = "discussionAuthor"
-	discussionNoVote             = "discussionNoVote"
-	discussionVoted              = "discussionVoted"
-	finalized                    = "finalized"
+	modeNotLoggedIn      optionsMode = "notLoggedIn"
+	modeDraftNotAuthor               = "draftNotAuthor"
+	modeDraftAuthor                  = "draftAuthor"
+	modeDiscussionAuthor             = "discussionAuthor"
+	modeDisucssionNoVote             = "discussionNoVote"
+	modeDiscussionVoted              = "discussionVoted"
+	modeAccepted                     = "accepted"
+	modeRejected                     = "rejected"
 )
 
 // bhapPageFiller fills the BHAP viewer page template.
@@ -118,25 +119,27 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	// Decide what options the user should have
 	var mode optionsMode
 	if userKey == nil {
-		mode = notLoggedIn
+		mode = modeNotLoggedIn
 	} else if loadedBHAP.Status == draftStatus {
 		if userKey.Equal(loadedBHAP.Author) {
-			mode = draftAuthor
+			mode = modeDraftAuthor
 		} else {
-			mode = draftNotAuthor
+			mode = modeDraftNotAuthor
 		}
 	} else if loadedBHAP.Status == discussionStatus {
 		if userKey.Equal(loadedBHAP.Author) {
-			mode = discussionAuthor
+			mode = modeDiscussionAuthor
 		} else {
 			if usersVoteKey == nil {
-				mode = discussionNoVote
+				mode = modeDisucssionNoVote
 			} else {
-				mode = discussionVoted
+				mode = modeDiscussionVoted
 			}
 		}
-	} else {
-		mode = finalized
+	} else if loadedBHAP.Status == acceptedStatus {
+		mode = modeAccepted
+	} else if loadedBHAP.Status == rejectedStatus {
+		mode = modeRejected
 	}
 
 	// Figure out the vote breakdown
@@ -170,6 +173,13 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var percentAccepted, percentRejected, percentUndecided int
+	if userCount-1 != 0 {
+		percentAccepted = int((acceptedCount / (userCount - 1)) * 100)
+		percentRejected = int((rejectedCount / (userCount - 1)) * 100)
+		percentUndecided = int((undecidedCount / (userCount - 1)) * 100)
+	}
+
 	filler := bhapPageFiller{
 		LoggedIn:     userKey != nil,
 		FullName:     fullName,
@@ -183,9 +193,9 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 		VoteCount: len(allVotes),
 		UserCount: userCount - 1,
 
-		PercentAccepted:  int((acceptedCount / (userCount - 1)) * 100),
-		PercentRejected:  int((rejectedCount / (userCount - 1)) * 100),
-		PercentUndecided: int((undecidedCount / (userCount - 1)) * 100),
+		PercentAccepted:  percentAccepted,
+		PercentRejected:  percentRejected,
+		PercentUndecided: percentUndecided,
 	}
 	log.Infof(ctx, "Filler: %+v", filler)
 	showTemplate(ctx, w, bhapTemplate, filler)

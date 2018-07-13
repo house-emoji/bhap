@@ -14,10 +14,9 @@ import (
 var bhapEditTemplate = compileTempl("views/edit.html")
 
 type editPageFiller struct {
-	ID       int
-	PaddedID string
-	Title    string
-	Content  string
+	LoggedIn bool
+	FullName string
+	BHAP     bhap
 }
 
 // serveBHAPEditPage serves up a page that allows the user to edit a proposal.
@@ -61,7 +60,7 @@ func serveBHAPEditPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the current logged in user
-	_, userKey, err := userFromSession(ctx, r)
+	currUser, userKey, err := userFromSession(ctx, r)
 	if err != nil {
 		http.Error(w, "Could not read session", http.StatusInternalServerError)
 		log.Errorf(ctx, "could not get session email: %v", err)
@@ -75,10 +74,9 @@ func serveBHAPEditPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filler := editPageFiller{
-		ID:       loadedBHAP.ID,
-		PaddedID: fmt.Sprintf("%04d", loadedBHAP.ID),
-		Title:    loadedBHAP.Title,
-		Content:  loadedBHAP.Content,
+		LoggedIn: userKey != nil,
+		FullName: currUser.FirstName + " " + currUser.LastName,
+		BHAP:     loadedBHAP,
 	}
 	showTemplate(ctx, w, bhapEditTemplate, filler)
 }

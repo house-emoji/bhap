@@ -105,11 +105,13 @@ func checkVotes(ctx context.Context, op bhapOperator) error {
 		return fmt.Errorf("counting users: %v", err)
 	}
 
-	if accepted+rejected == userCnt-1 {
-		if accepted > userCnt/2 {
+	nonAuthorCnt := userCnt - 1
+
+	if accepted+rejected == nonAuthorCnt {
+		if accepted > nonAuthorCnt/2 {
 			op.bhap.Status = acceptedStatus
 			log.Infof(ctx, "marked BHAP %v as accepted", op.bhap.ID)
-		} else if rejected > userCnt/2 {
+		} else if rejected > nonAuthorCnt/2 {
 			op.bhap.Status = rejectedStatus
 			log.Infof(ctx, "marked BHAP %v as rejected", op.bhap.ID)
 		}

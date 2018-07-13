@@ -2,22 +2,55 @@
 
 <html>
   <head>
-    <title>Editing BHAP {{.PaddedID}}</title>
+    <title>Editing BHAP {{printf "%04d" .BHAP.ID}}</title>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
   </head>
 
   <body>
-    <h1>Editing BHAP {{.PaddedID}}</h1>
+    <div id="parent-container">
+      <nav>
+        <header>BHAP {{printf "%04d" .BHAP.ID}}</header>
 
-    <form action="/bhap/{{.ID}}/edit" method="post">
-      <p>Title</p>
-      <input type="text" name="title" value="{{.Title}}"/>
+        <!--
+          A dummy div that provides space between the header and the login
+          status
+        -->
+        <div class="space-taker"></div>
 
-      <p>Content</p>
-      <textarea rows="8" cols="50" name="content">{{.Content}}</textarea>
+        <div class="login-status">
+          {{if .LoggedIn}}
+            <p>{{.FullName}}</p>
+            <a href="/logout">Log Out</a>
+          {{else}}
+            <p>You are not logged in.</p>
+            <a href="/login">Log In</a>
+          {{end}}
+        </div>
 
-      <br/><br/>
+        <form action="/" method="GET">
+          <input type="submit" value="⮜ Back to BHAPs">
+        </form>
+      </nav>
 
-      <input type="submit"/>
-    </form>
+      <div class="proposal-form-container">
+        <form action="/bhap/{{.BHAP.ID}}/edit" method="POST">
+          <h2>Title</h2>
+          <p>(Do not include BHAP #)</p>
+          <input type="text" name="title" value="{{.BHAP.Title}}"/>
+
+          <h2>Short Description</h2>
+          <input type="text" name="shortDescription" value="{{.BHAP.ShortDescription}}"/>
+
+          <h2>BHAP Conditions</h2>
+          <p>Describe exactly what you want the BHAP to entail</p>
+          <textarea name="content">{{.BHAP.Content}}</textarea>
+
+          <br/><br/>
+
+          <input type="submit"/>
+        </form>
+      </div>
+    </div>
   </body>
 </html>

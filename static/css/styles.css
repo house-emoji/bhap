@@ -14,8 +14,14 @@ nav {
 	justify-content: space-between;
 }
 
+nav .space-taker {
+	flex-grow: 1;
+}
+
 nav .login-status {
 	text-align: right;
+
+	margin-right: 1.5em;
 }
 
 nav .login-status p {
@@ -47,6 +53,8 @@ nav input {
 
 	font-size: 130%;
 	font-family: 'Raleway', sans-serif;
+
+	justify-self: flex-end;
 }
 
 .new-bhap {
@@ -223,3 +231,45 @@ nav input {
 	text-align: center;
 }
 
+.options-container .buttons-container {
+	display: flex;
+	justify-content: center;
+}
+
+.options-container .buttons-container input[type="submit"] {
+	background: white;
+
+	padding: 1em;
+	padding-left: 1.5em;
+
+	margin-left: 3em;
+	margin-right: 3em;
+
+	border: none;
+	border-radius: 0.75em;
+
+	min-width: 12em;
+
+	font-size: 100%;
+	font-family: 'Raleway', sans-serif;
+	color: black;
+
+	text-align: left;
+}
+
+.options-container .buttons-container .reject {
+	background: black;
+
+	color: white;
+}
+
+.title-and-edit-container {
+	display: flex;
+	align-items: flex-end;
+}
+
+.title-and-edit-container a {
+	margin-left: 1em;
+	color: #e0e0e0;
+	font-size: 120%;
+}
