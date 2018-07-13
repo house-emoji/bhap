@@ -85,6 +85,7 @@ func handleEdit(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	title := r.FormValue("title")
+	shortDescription := r.FormValue("shortDescription")
 	content := r.FormValue("content")
 
 	if !op.bhap.Author.Equal(op.userKey) {
@@ -102,6 +103,7 @@ func handleEdit(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	}
 
 	op.bhap.Title = title
+	op.bhap.ShortDescription = shortDescription
 	op.bhap.Content = content
 
 	if _, err := datastore.Put(ctx, op.bhapKey, &op.bhap); err != nil {
