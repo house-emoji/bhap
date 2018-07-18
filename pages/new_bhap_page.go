@@ -1,10 +1,11 @@
-package main
+package pages
 
 import (
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/house-emoji/bhap"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -22,12 +23,12 @@ type proposePageFiller struct {
 	FullName string
 }
 
-// serveNewBHAPPage serves a page for creating new BHAPs.
-func serveNewBHAPPage(w http.ResponseWriter, r *http.Request) {
+// ServeNewBHAPPage serves a page for creating new BHAPs.
+func ServeNewBHAPPage(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	// Get the current logged in user
-	currUser, userKey, err := userFromSession(ctx, r)
+	currUser, userKey, err := bhap.UserFromSession(ctx, r)
 	if err != nil {
 		http.Error(w, "Could not read session", http.StatusInternalServerError)
 		log.Errorf(ctx, "could not get session email: %v", err)
@@ -42,8 +43,8 @@ func serveNewBHAPPage(w http.ResponseWriter, r *http.Request) {
 	showTemplate(ctx, w, proposeTemplate, filler)
 }
 
-// handleNewBHAPForm creates a new BHAP based on information passed from a POST form.
-func handleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
+// HandleNewBHAPForm creates a new BHAP based on information passed from a POST form.
+func HandleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	title := r.FormValue("title")
@@ -51,7 +52,7 @@ func handleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
 	content := r.FormValue("content")
 
 	// Find what the ID of the new BHAP should be
-	newID, err := nextID(ctx)
+	newID, err := bhap.NextID(ctx)
 	if err != nil {
 		log.Errorf(ctx, "could not query BHAPs: %v", err)
 		http.Error(w, "Error while finding BHAP", http.StatusInternalServerError)
@@ -59,20 +60,20 @@ func handleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the current logged in user
-	_, userKey, err := userFromSession(ctx, r)
+	_, userKey, err := bhap.UserFromSession(ctx, r)
 	if err != nil {
 		http.Error(w, "Could not read session", http.StatusInternalServerError)
 		log.Errorf(ctx, "could not get session email: %v", err)
 		return
 	}
 
-	newBHAP := bhap{
+	newBHAP := bhap.BHAP{
 		ID:               newID,
 		Title:            title,
 		ShortDescription: shortDescription,
 		LastModified:     time.Now(),
 		Author:           userKey,
-		Status:           draftStatus,
+		Status:           bhap.DraftStatus,
 		CreatedDate:      time.Now(),
 		Content:          content,
 	}

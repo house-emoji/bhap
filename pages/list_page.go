@@ -1,8 +1,9 @@
-package main
+package pages
 
 import (
 	"net/http"
 
+	"github.com/house-emoji/bhap"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
 )
@@ -13,19 +14,19 @@ var listTemplate = compileTempl("views/list.html")
 type listPageFiller struct {
 	LoggedIn        bool
 	FullName        string
-	NewBHAP         *bhap
-	DiscussionBHAPs []bhap
-	ActiveBHAPs     []bhap
-	RejectedBHAPs   []bhap
-	DraftBHAPs      []bhap
+	NewBHAP         *bhap.BHAP
+	DiscussionBHAPs []bhap.BHAP
+	ActiveBHAPs     []bhap.BHAP
+	RejectedBHAPs   []bhap.BHAP
+	DraftBHAPs      []bhap.BHAP
 }
 
-// serveListPage serves a page with a list of all BHAPs.
-func serveListPage(w http.ResponseWriter, r *http.Request) {
+// ServeListPage serves a page with a list of all BHAPs.
+func ServeListPage(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	// Get the current logged in user
-	currUser, userKey, err := userFromSession(ctx, r)
+	currUser, userKey, err := bhap.UserFromSession(ctx, r)
 	if err != nil {
 		http.Error(w, "Could not read session", http.StatusInternalServerError)
 		log.Errorf(ctx, "could not get session email: %v", err)
@@ -33,7 +34,7 @@ func serveListPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get all discussion BHAPs
-	discussionBHAPs, err := bhapsByStatus(ctx, discussionStatus)
+	discussionBHAPs, err := bhap.ByStatus(ctx, bhap.DiscussionStatus)
 	if err != nil {
 		log.Errorf(ctx, "getting discussion BHAPs: %v", err)
 		http.Error(w, "Could not get discussion BHAPs",
@@ -41,14 +42,14 @@ func serveListPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Feature the first discussion BHAP
-	var newBHAP *bhap
+	var newBHAP *bhap.BHAP
 	if len(discussionBHAPs) > 0 {
 		newBHAP = &discussionBHAPs[0]
 		discussionBHAPs = discussionBHAPs[1:]
 	}
 
 	// Get all active BHAPs
-	activeBHAPs, err := bhapsByStatus(ctx, acceptedStatus)
+	activeBHAPs, err := bhap.ByStatus(ctx, bhap.AcceptedStatus)
 	if err != nil {
 		log.Errorf(ctx, "getting active BHAPs: %v", err)
 		http.Error(w, "Could not get active BHAPs",
@@ -57,7 +58,7 @@ func serveListPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get all rejected BHAPs
-	rejectedBHAPs, err := bhapsByStatus(ctx, rejectedStatus)
+	rejectedBHAPs, err := bhap.ByStatus(ctx, bhap.RejectedStatus)
 	if err != nil {
 		log.Errorf(ctx, "getting rejected BHAPs: %v", err)
 		http.Error(w, "Could not get rejected BHAPs",
@@ -66,7 +67,7 @@ func serveListPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get all draft BHAPs
-	draftBHAPs, err := bhapsByStatus(ctx, draftStatus)
+	draftBHAPs, err := bhap.ByStatus(ctx, bhap.DraftStatus)
 	if err != nil {
 		log.Errorf(ctx, "getting draft BHAPs: %v", err)
 		http.Error(w, "Could not get draft BHAPs",

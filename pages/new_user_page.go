@@ -1,4 +1,4 @@
-package main
+package pages
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/house-emoji/bhap"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -21,15 +22,15 @@ type newUserFiller struct {
 	BackgroundURL string
 }
 
-// serveNewUserPage serves the page that can be used to create a new user from
+// ServeNewUserPage serves the page that can be used to create a new user from
 // an invitation.
-func serveNewUserPage(w http.ResponseWriter, r *http.Request) {
+func ServeNewUserPage(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	// Get the invitation UID
 	uid := mux.Vars(r)["uid"]
 
-	invite, key, err := invitationByUID(ctx, uid)
+	invite, key, err := bhap.InvitationByUID(ctx, uid)
 	if err != nil {
 		http.Error(w,
 			"Error while getting invitation information",
@@ -62,8 +63,8 @@ func serveNewUserPage(w http.ResponseWriter, r *http.Request) {
 	showTemplate(ctx, w, newUserTemplate, filler)
 }
 
-// handleNewUserForm creates a new user based on form data from a POST request.
-func handleNewUserForm(w http.ResponseWriter, r *http.Request) {
+// HandleNewUserForm creates a new user based on form data from a POST request.
+func HandleNewUserForm(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	// Get the invitation UID
@@ -89,7 +90,7 @@ func handleNewUserForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	invite, inviteKey, err := invitationByUID(ctx, uid)
+	invite, inviteKey, err := bhap.InvitationByUID(ctx, uid)
 	if err != nil {
 		http.Error(w,
 			"Error while getting invitation information",
@@ -117,14 +118,14 @@ func handleNewUserForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser := user{
+	newUser := bhap.User{
 		FirstName:    firstName,
 		LastName:     lastName,
 		Email:        invite.Email,
 		PasswordHash: passwordHash,
 	}
 
-	userKey := datastore.NewKey(ctx, userEntityName, "", 0, nil)
+	userKey := datastore.NewKey(ctx, bhap.UserEntityName, "", 0, nil)
 	if _, err := datastore.Put(ctx, userKey, &newUser); err != nil {
 		http.Error(w,
 			"Error saving new user",

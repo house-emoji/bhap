@@ -1,4 +1,4 @@
-package main
+package bhap
 
 import (
 	"context"
@@ -8,25 +8,25 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-const userEntityName = "User"
+const UserEntityName = "User"
 
-// user contains data on a member of the BHAP consortium.
-type user struct {
+// User contains data on a member of the BHAP consortium.
+type User struct {
 	FirstName    string
 	LastName     string
 	Email        string
 	PasswordHash []byte
 }
 
-func (u user) String() string {
+func (u User) String() string {
 	return fmt.Sprintf("%v %v <%v>", u.FirstName, u.LastName, u.Email)
 }
 
-// checkLogin checks the given login credentials and returns true if they are
+// CheckLogin checks the given login credentials and returns true if they are
 // correct.
-func checkLogin(ctx context.Context, email, password string) (bool, error) {
-	var results []user
-	query := datastore.NewQuery(userEntityName).
+func CheckLogin(ctx context.Context, email, password string) (bool, error) {
+	var results []User
+	query := datastore.NewQuery(UserEntityName).
 		Filter("Email =", email).
 		Limit(1)
 	if _, err := query.GetAll(ctx, &results); err != nil {
@@ -42,20 +42,20 @@ func checkLogin(ctx context.Context, email, password string) (bool, error) {
 	return err == nil, nil
 }
 
-// userByEmail returns the user with the given email. If no user with that
+// UserByEmail returns the user with the given email. If no user with that
 // email exists, the key will be nil.
-func userByEmail(ctx context.Context, email string) (user, *datastore.Key, error) {
-	var results []user
-	query := datastore.NewQuery(userEntityName).
+func UserByEmail(ctx context.Context, email string) (User, *datastore.Key, error) {
+	var results []User
+	query := datastore.NewQuery(UserEntityName).
 		Filter("Email =", email).
 		Limit(1)
 	keys, err := query.GetAll(ctx, &results)
 	if err != nil {
-		return user{}, nil, err
+		return User{}, nil, err
 	}
 
 	if len(results) == 0 {
-		return user{}, nil, nil
+		return User{}, nil, nil
 	}
 
 	return results[0], keys[0], nil

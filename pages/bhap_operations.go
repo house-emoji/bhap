@@ -1,17 +1,18 @@
-package main
+package pages
 
 import (
 	"fmt"
 	"net/http"
 
+	"github.com/house-emoji/bhap"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
 
-// handleReadyForDiscussion handles requests to make BHAPs as ready to be
+// HandleReadyForDiscussion handles requests to make BHAPs as ready to be
 // discussed.
-func handleReadyForDiscussion(op bhapOperator, w http.ResponseWriter, r *http.Request) {
+func HandleReadyForDiscussion(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	if !op.bhap.Author.Equal(op.userKey) {
@@ -21,14 +22,14 @@ func handleReadyForDiscussion(op bhapOperator, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if op.bhap.Status != draftStatus {
+	if op.bhap.Status != bhap.DraftStatus {
 		http.Error(w, "Only drafts may be marked as ready for discussion",
 			http.StatusBadRequest)
 		log.Warningf(ctx, "non-draft BHAP denied")
 		return
 	}
 
-	op.bhap.Status = discussionStatus
+	op.bhap.Status = bhap.DiscussionStatus
 	if _, err := datastore.Put(ctx, op.bhapKey, &op.bhap); err != nil {
 		http.Error(w, "Could not update BHAP", http.StatusInternalServerError)
 		log.Warningf(ctx, "updating BHAP: %v", err)
@@ -38,8 +39,8 @@ func handleReadyForDiscussion(op bhapOperator, w http.ResponseWriter, r *http.Re
 	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
 }
 
-// handleDeleteVote handles requests to delete a submitted vote.
-func handleDeleteVote(op bhapOperator, w http.ResponseWriter, r *http.Request) {
+// HandleDeleteVote handles requests to delete a submitted vote.
+func HandleDeleteVote(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	if op.bhap.Author.Equal(op.userKey) {
@@ -48,14 +49,14 @@ func handleDeleteVote(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if op.bhap.Status != discussionStatus {
+	if op.bhap.Status != bhap.DiscussionStatus {
 		http.Error(w, "Only discussion BHAPs can have votes deleted",
 			http.StatusBadRequest)
 		log.Warningf(ctx, "vote delete request on non-discussion BHAP denied")
 		return
 	}
 
-	_, voteKey, err := voteForBHAP(ctx, op.bhapKey, op.userKey)
+	_, voteKey, err := bhap.GetVoteForBHAP(ctx, op.bhapKey, op.userKey)
 	if err != nil {
 		http.Error(w, "Could not load vote", http.StatusInternalServerError)
 		log.Errorf(ctx, "getting vote: %v", err)
@@ -77,8 +78,8 @@ func handleDeleteVote(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
 }
 
-// handleVoteAccept handles requests to submit an accept vote on the BHAP.
-func handleVoteAccept(op bhapOperator, w http.ResponseWriter, r *http.Request) {
+// HandleVoteAccept handles requests to submit an accept vote on the BHAP.
+func HandleVoteAccept(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	if op.bhap.Author.Equal(op.userKey) {
@@ -87,27 +88,27 @@ func handleVoteAccept(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if op.bhap.Status != discussionStatus {
+	if op.bhap.Status != bhap.DiscussionStatus {
 		http.Error(w, "Only discussion BHAPs may be voted on",
 			http.StatusBadRequest)
 		log.Warningf(ctx, "vote on non-discussion BHAP denied")
 		return
 	}
 
-	err := setVoteForBHAP(ctx, op.bhapKey, op.userKey, acceptedStatus)
+	err := bhap.SetVoteForBHAP(ctx, op.bhapKey, op.userKey, bhap.AcceptedStatus)
 	if err != nil {
 		log.Errorf(ctx, "could not create vote: %v", err)
 		http.Error(w, "Could not create vote", 500)
 		return
 	}
 
-	checkVotes(ctx, op)
+	bhap.CheckVotes(ctx, op.bhapKey, op.bhap)
 
 	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
 }
 
-// handleVoteReject handles requests to submit an reject vote on the BHAP.
-func handleVoteReject(op bhapOperator, w http.ResponseWriter, r *http.Request) {
+// HandleVoteReject handles requests to submit an reject vote on the BHAP.
+func HandleVoteReject(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	if op.bhap.Author.Equal(op.userKey) {
@@ -116,27 +117,27 @@ func handleVoteReject(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if op.bhap.Status != discussionStatus {
+	if op.bhap.Status != bhap.DiscussionStatus {
 		http.Error(w, "Only discussion BHAPs may be voted on",
 			http.StatusBadRequest)
 		log.Warningf(ctx, "vote on non-discussion BHAP denied")
 		return
 	}
 
-	err := setVoteForBHAP(ctx, op.bhapKey, op.userKey, rejectedStatus)
+	err := bhap.SetVoteForBHAP(ctx, op.bhapKey, op.userKey, bhap.RejectedStatus)
 	if err != nil {
 		log.Errorf(ctx, "could not create vote: %v", err)
 		http.Error(w, "Could not create vote", 500)
 		return
 	}
 
-	checkVotes(ctx, op)
+	bhap.CheckVotes(ctx, op.bhapKey, op.bhap)
 
 	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
 }
 
-// handleWithdraw handles requests to withdraw a BHAP.
-func handleWithdraw(op bhapOperator, w http.ResponseWriter, r *http.Request) {
+// HandleWithdraw handles requests to withdraw a BHAP.
+func HandleWithdraw(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	if !op.bhap.Author.Equal(op.userKey) {
@@ -146,14 +147,14 @@ func handleWithdraw(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if op.bhap.Status != discussionStatus {
+	if op.bhap.Status != bhap.DiscussionStatus {
 		http.Error(w, "Only discussion BHAPs may be withdrawn",
 			http.StatusBadRequest)
 		log.Warningf(ctx, "vote on non-discussion BHAP denied")
 		return
 	}
 
-	op.bhap.Status = withdrawnStatus
+	op.bhap.Status = bhap.WithdrawnStatus
 	if _, err := datastore.Put(ctx, op.bhapKey, &op.bhap); err != nil {
 		http.Error(w, "Could not update BHAP", http.StatusInternalServerError)
 		log.Warningf(ctx, "updating BHAP: %v", err)

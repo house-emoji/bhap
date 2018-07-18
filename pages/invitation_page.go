@@ -1,28 +1,29 @@
-package main
+package pages
 
 import (
 	"net/http"
 
+	"github.com/house-emoji/bhap"
 	"github.com/rs/xid"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
 
-// serveInvitePage serves the page that is used to create new invitations to
+// ServeInvitePage serves the page that is used to create new invitations to
 // join the BHAP consortium.
-func serveInvitePage(w http.ResponseWriter, r *http.Request) {
+func ServeInvitePage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "views/invite.html")
 }
 
-// handleInvitationForm creates a new invitation based on form input from a
+// HandleInvitationForm creates a new invitation based on form input from a
 // POST request.
-func handleInvitationForm(w http.ResponseWriter, r *http.Request) {
+func HandleInvitationForm(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	email := r.FormValue("email")
 
-	duplicateCount, err := datastore.NewQuery(userEntityName).
+	duplicateCount, err := datastore.NewQuery(bhap.UserEntityName).
 		Filter("Email =", email).
 		Count(ctx)
 	if err != nil {
@@ -39,13 +40,13 @@ func handleInvitationForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newInvitation := invitation{
+	newInvitation := bhap.Invitation{
 		Email:     email,
 		UID:       xid.New().String(),
 		EmailSent: false,
 	}
 
-	key := datastore.NewKey(ctx, InvitationEntityName, "", 0, nil)
+	key := datastore.NewKey(ctx, bhap.InvitationEntityName, "", 0, nil)
 	if _, err := datastore.Put(ctx, key, &newInvitation); err != nil {
 		log.Errorf(ctx, "could not create invitation: %v", err)
 		http.Error(w, "Could not create invitation",

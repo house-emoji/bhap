@@ -1,9 +1,10 @@
-package main
+package email
 
 import (
 	"bytes"
 	"net/http"
 
+	"github.com/house-emoji/bhap"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -14,12 +15,12 @@ var invitationTemplate = compileTempl("mail_templates/invitation.txt")
 
 const InvitationSubject = "You have been invited to join the BHAP Consortium"
 
-// sendInvitations sends any unsent invitation emails to potential users. It is
+// SendInvitations sends any unsent invitation emails to potential users. It is
 // called periodically as a cron job.
-func sendInvitations(w http.ResponseWriter, r *http.Request) {
+func SendInvitations(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
-	unsents, keys, err := unsentInvitations(ctx)
+	unsents, keys, err := bhap.UnsentInvitations(ctx)
 	if err != nil {
 		http.Error(w, "Could not get unsent invitations", 500)
 		log.Errorf(ctx, "could not get unsent invitations: %v", err)

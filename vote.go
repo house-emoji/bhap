@@ -1,4 +1,4 @@
-package main
+package bhap
 
 import (
 	"context"
@@ -13,11 +13,11 @@ const voteEntityName = "Vote"
 type vote struct {
 	OnBHAP *datastore.Key
 	ByUser *datastore.Key
-	Value  status
+	Value  Status
 }
 
-// allVotesForBHAP returns all the votes that have been cast for a given BHAP.
-func allVotesForBHAP(ctx context.Context, bhapKey *datastore.Key) ([]vote, error) {
+// AllVotesForBHAP returns all the votes that have been cast for a given BHAP.
+func AllVotesForBHAP(ctx context.Context, bhapKey *datastore.Key) ([]vote, error) {
 	var votes []vote
 	_, err := datastore.NewQuery(voteEntityName).
 		Ancestor(bhapKey).
@@ -29,7 +29,8 @@ func allVotesForBHAP(ctx context.Context, bhapKey *datastore.Key) ([]vote, error
 	return votes, nil
 }
 
-func voteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key) (vote, *datastore.Key, error) {
+// GetVoteForBHAP returns the user's current vote on a BHAP.
+func GetVoteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key) (vote, *datastore.Key, error) {
 	var votes []vote
 	keys, err := datastore.NewQuery(voteEntityName).
 		Ancestor(bhapKey).
@@ -46,9 +47,9 @@ func voteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key) (vote, *d
 	}
 }
 
-// setVoteForBHAP sets the vote of the user for the given BHAP to a value,
+// SetVoteForBHAP sets the vote of the user for the given BHAP to a value,
 // creating a new vote object if necessary.
-func setVoteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key, value status) error {
+func SetVoteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key, value Status) error {
 	var existingVotes []vote
 	existingKeys, err := datastore.NewQuery(voteEntityName).
 		Ancestor(bhapKey).
@@ -82,10 +83,10 @@ func setVoteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key, value 
 	return nil
 }
 
-// checkVotes counts up all votes for a BHAP and changes its status if
+// CheckVotes counts up all votes for a BHAP and changes its status if
 // necessary. All users must vote for the BHAP to be finalized.
-func checkVotes(ctx context.Context, op bhapOperator) error {
-	votes, err := allVotesForBHAP(ctx, op.bhapKey)
+func CheckVotes(ctx context.Context, bhapKey *datastore.Key, forBHAP BHAP) error {
+	votes, err := AllVotesForBHAP(ctx, bhapKey)
 	if err != nil {
 		return err
 	}
@@ -93,14 +94,14 @@ func checkVotes(ctx context.Context, op bhapOperator) error {
 	accepted := 0
 	rejected := 0
 	for _, vote := range votes {
-		if vote.Value == acceptedStatus {
+		if vote.Value == AcceptedStatus {
 			accepted++
-		} else if vote.Value == rejectedStatus {
+		} else if vote.Value == RejectedStatus {
 			rejected++
 		}
 	}
 
-	userCnt, err := datastore.NewQuery(userEntityName).Count(ctx)
+	userCnt, err := datastore.NewQuery(UserEntityName).Count(ctx)
 	if err != nil {
 		return fmt.Errorf("counting users: %v", err)
 	}
@@ -109,15 +110,15 @@ func checkVotes(ctx context.Context, op bhapOperator) error {
 
 	if accepted+rejected == nonAuthorCnt {
 		if accepted > nonAuthorCnt/2 {
-			op.bhap.Status = acceptedStatus
-			log.Infof(ctx, "marked BHAP %v as accepted", op.bhap.ID)
+			forBHAP.Status = AcceptedStatus
+			log.Infof(ctx, "marked BHAP %v as accepted", forBHAP.ID)
 		} else if rejected > nonAuthorCnt/2 {
-			op.bhap.Status = rejectedStatus
-			log.Infof(ctx, "marked BHAP %v as rejected", op.bhap.ID)
+			forBHAP.Status = RejectedStatus
+			log.Infof(ctx, "marked BHAP %v as rejected", forBHAP.ID)
 		}
 	}
 
-	if _, err := datastore.Put(ctx, op.bhapKey, &op.bhap); err != nil {
+	if _, err := datastore.Put(ctx, bhapKey, &forBHAP); err != nil {
 		return fmt.Errorf("saving BHAP: %v", err)
 	}
 

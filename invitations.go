@@ -1,4 +1,4 @@
-package main
+package bhap
 
 import (
 	"context"
@@ -8,14 +8,15 @@ import (
 
 const InvitationEntityName = "Invitation"
 
-type invitation struct {
+type Invitation struct {
 	Email     string
 	UID       string
 	EmailSent bool
 }
 
-func unsentInvitations(ctx context.Context) ([]invitation, []*datastore.Key, error) {
-	var results []invitation
+// UnsentInvitations returns all invitations that have yet to be emailed.
+func UnsentInvitations(ctx context.Context) ([]Invitation, []*datastore.Key, error) {
+	var results []Invitation
 	query := datastore.NewQuery(InvitationEntityName).
 		Filter("EmailSent =", false)
 
@@ -27,18 +28,19 @@ func unsentInvitations(ctx context.Context) ([]invitation, []*datastore.Key, err
 	return results, keys, nil
 }
 
-func invitationByUID(ctx context.Context, uid string) (invitation, *datastore.Key, error) {
-	var results []invitation
+// InvitationByUID returns the invitation with the corresponding UID.
+func InvitationByUID(ctx context.Context, uid string) (Invitation, *datastore.Key, error) {
+	var results []Invitation
 	query := datastore.NewQuery(InvitationEntityName).
 		Filter("UID =", uid)
 
 	keys, err := query.GetAll(ctx, &results)
 	if err != nil {
-		return invitation{}, nil, err
+		return Invitation{}, nil, err
 	}
 
 	if len(results) == 0 {
-		return invitation{}, nil, nil
+		return Invitation{}, nil, nil
 	}
 
 	return results[0], keys[0], nil

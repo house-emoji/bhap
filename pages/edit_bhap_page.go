@@ -1,4 +1,4 @@
-package main
+package pages
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/house-emoji/bhap"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -16,11 +17,11 @@ var bhapEditTemplate = compileTempl("views/edit.html")
 type editPageFiller struct {
 	LoggedIn bool
 	FullName string
-	BHAP     bhap
+	BHAP     bhap.BHAP
 }
 
-// serveBHAPEditPage serves up a page that allows the user to edit a proposal.
-func serveBHAPEditPage(w http.ResponseWriter, r *http.Request) {
+// ServeEditBHAPPage serves up a page that allows the user to edit a proposal.
+func ServeEditBHAPPage(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	// Get the requested ID
@@ -33,7 +34,7 @@ func serveBHAPEditPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load the requested BHAP
-	loadedBHAP, bhapKey, err := bhapByID(ctx, id)
+	loadedBHAP, bhapKey, err := bhap.ByID(ctx, id)
 	if err != nil {
 		log.Errorf(ctx, "could not load BHAP: %v", err)
 		http.Error(w, "Failed to load BHAP", http.StatusInternalServerError)
@@ -45,14 +46,14 @@ func serveBHAPEditPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !isEditable(loadedBHAP.Status) {
+	if !isEditableStatus(loadedBHAP.Status) {
 		http.Error(w, "Only draft or discussion BHAPs may be edited",
 			http.StatusBadRequest)
 		log.Warningf(ctx, "request to edit a non-draft or non-discussion proposal")
 		return
 	}
 
-	var author user
+	var author bhap.User
 	if err := datastore.Get(ctx, loadedBHAP.Author, &author); err != nil {
 		log.Errorf(ctx, "Error loading user: %v", err)
 		http.Error(w, "Failed to load user", http.StatusInternalServerError)
@@ -60,7 +61,7 @@ func serveBHAPEditPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the current logged in user
-	currUser, userKey, err := userFromSession(ctx, r)
+	currUser, userKey, err := bhap.UserFromSession(ctx, r)
 	if err != nil {
 		http.Error(w, "Could not read session", http.StatusInternalServerError)
 		log.Errorf(ctx, "could not get session email: %v", err)
@@ -81,7 +82,8 @@ func serveBHAPEditPage(w http.ResponseWriter, r *http.Request) {
 	showTemplate(ctx, w, bhapEditTemplate, filler)
 }
 
-func handleEdit(op bhapOperator, w http.ResponseWriter, r *http.Request) {
+// HandleEdit handles a request to edit a BHAP.
+func HandleEdit(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	title := r.FormValue("title")
@@ -95,7 +97,7 @@ func handleEdit(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !isEditable(op.bhap.Status) {
+	if !isEditableStatus(op.bhap.Status) {
 		http.Error(w, "Only draft or discussion BHAPs may be edited",
 			http.StatusBadRequest)
 		log.Warningf(ctx, "request to edit a non-draft or non-discussion proposal")
@@ -117,6 +119,6 @@ func handleEdit(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
 }
 
-func isEditable(bhapStatus status) bool {
-	return bhapStatus == draftStatus || bhapStatus == discussionStatus
+func isEditableStatus(status bhap.Status) bool {
+	return status == bhap.DraftStatus || status == bhap.DiscussionStatus
 }

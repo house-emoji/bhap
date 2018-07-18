@@ -1,4 +1,4 @@
-package main
+package email
 
 // invitationFiller fills the email template used to invite new users to BHAP.
 type invitationFiller struct {

@@ -1,25 +1,30 @@
-package main
+package pages
 
 import (
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/house-emoji/bhap"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
 
 type bhapOperator struct {
-	bhap    bhap
+	bhap    bhap.BHAP
 	bhapKey *datastore.Key
-	user    user
+	user    bhap.User
 	userKey *datastore.Key
 }
 
+// bhapOperatorHandler is a handler that does some operation on a single BHAP.
+// Middleware is provided here for convenience.
 type bhapOperatorHandler func(op bhapOperator, w http.ResponseWriter, r *http.Request)
 
-func setUpBHAPOperator(handler bhapOperatorHandler) http.HandlerFunc {
+// SetUpBHAPOperator is middleware that fetches some common data required for
+// BHAP operations.
+func SetUpBHAPOperator(handler bhapOperatorHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := appengine.NewContext(r)
 
@@ -30,7 +35,7 @@ func setUpBHAPOperator(handler bhapOperatorHandler) http.HandlerFunc {
 			return
 		}
 
-		bhap, key, err := bhapByID(ctx, bhapID)
+		loadedBHAP, key, err := bhap.ByID(ctx, bhapID)
 		if err != nil {
 			http.Error(w, "Could not load BHAP", http.StatusInternalServerError)
 			log.Errorf(ctx, "loading BHAP: %v", err)
@@ -42,7 +47,7 @@ func setUpBHAPOperator(handler bhapOperatorHandler) http.HandlerFunc {
 			return
 		}
 
-		user, userKey, err := userFromSession(ctx, r)
+		user, userKey, err := bhap.UserFromSession(ctx, r)
 		if err != nil {
 			http.Error(w, "Could not load user", http.StatusInternalServerError)
 			log.Errorf(ctx, "loading user: %v", err)
@@ -55,7 +60,7 @@ func setUpBHAPOperator(handler bhapOperatorHandler) http.HandlerFunc {
 		}
 
 		op := bhapOperator{
-			bhap:    bhap,
+			bhap:    loadedBHAP,
 			bhapKey: key,
 			user:    user,
 			userKey: userKey}

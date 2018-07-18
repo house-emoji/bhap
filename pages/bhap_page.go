@@ -1,4 +1,4 @@
-package main
+package pages
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/house-emoji/bhap"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -33,7 +34,7 @@ type bhapPageFiller struct {
 	LoggedIn     bool
 	FullName     string
 	ID           int
-	BHAP         bhap
+	BHAP         bhap.BHAP
 	SelectedVote string
 	OptionsMode  optionsMode
 	Editable     bool
@@ -47,8 +48,8 @@ type bhapPageFiller struct {
 	PercentUndecided int
 }
 
-// serveBHAPPage serves up a page that displays info on a single BHAP.
-func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
+// ServeBHAPPage serves up a page that displays info on a single BHAP.
+func ServeBHAPPage(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	// Get the requested ID
@@ -61,7 +62,7 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load the requested BHAP
-	loadedBHAP, bhapKey, err := bhapByID(ctx, id)
+	loadedBHAP, bhapKey, err := bhap.ByID(ctx, id)
 	if err != nil {
 		log.Errorf(ctx, "could not load BHAP: %v", err)
 		http.Error(w, "Failed to load BHAP", http.StatusInternalServerError)
@@ -77,7 +78,7 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	options := blackfriday.WithExtensions(blackfriday.HardLineBreak)
 	html := string(blackfriday.Run([]byte(loadedBHAP.Content), options))
 
-	var author user
+	var author bhap.User
 	if err := datastore.Get(ctx, loadedBHAP.Author, &author); err != nil {
 		log.Errorf(ctx, "loading user: %v", err)
 		http.Error(w, "Failed to load user", http.StatusInternalServerError)
@@ -85,14 +86,14 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the current logged in user
-	user, userKey, err := userFromSession(ctx, r)
+	user, userKey, err := bhap.UserFromSession(ctx, r)
 	if err != nil {
 		http.Error(w, "Could not read session", http.StatusInternalServerError)
 		log.Errorf(ctx, "getting session email: %v", err)
 		return
 	}
 
-	allVotes, err := allVotesForBHAP(ctx, bhapKey)
+	allVotes, err := bhap.AllVotesForBHAP(ctx, bhapKey)
 	if err != nil {
 		http.Error(w, "Could not get votes",
 			http.StatusInternalServerError)
@@ -100,7 +101,7 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userCount, err := datastore.NewQuery(userEntityName).Count(ctx)
+	userCount, err := datastore.NewQuery(bhap.UserEntityName).Count(ctx)
 	if err != nil {
 		http.Error(w, "Could not get user count",
 			http.StatusInternalServerError)
@@ -108,7 +109,7 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usersVote, usersVoteKey, err := voteForBHAP(ctx, bhapKey, userKey)
+	usersVote, usersVoteKey, err := bhap.GetVoteForBHAP(ctx, bhapKey, userKey)
 	if err != nil {
 		http.Error(w, "Could not read user's vote",
 			http.StatusInternalServerError)
@@ -120,13 +121,13 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	var mode optionsMode
 	if userKey == nil {
 		mode = modeNotLoggedIn
-	} else if loadedBHAP.Status == draftStatus {
+	} else if loadedBHAP.Status == bhap.DraftStatus {
 		if userKey.Equal(loadedBHAP.Author) {
 			mode = modeDraftAuthor
 		} else {
 			mode = modeDraftNotAuthor
 		}
-	} else if loadedBHAP.Status == discussionStatus {
+	} else if loadedBHAP.Status == bhap.DiscussionStatus {
 		if userKey.Equal(loadedBHAP.Author) {
 			mode = modeDiscussionAuthor
 		} else {
@@ -136,9 +137,9 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 				mode = modeDiscussionVoted
 			}
 		}
-	} else if loadedBHAP.Status == acceptedStatus {
+	} else if loadedBHAP.Status == bhap.AcceptedStatus {
 		mode = modeAccepted
-	} else if loadedBHAP.Status == rejectedStatus {
+	} else if loadedBHAP.Status == bhap.RejectedStatus {
 		mode = modeRejected
 	}
 
@@ -146,9 +147,9 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	acceptedCount := 0
 	rejectedCount := 0
 	for _, v := range allVotes {
-		if v.Value == acceptedStatus {
+		if v.Value == bhap.AcceptedStatus {
 			acceptedCount++
-		} else if v.Value == rejectedStatus {
+		} else if v.Value == bhap.RejectedStatus {
 			rejectedCount++
 		}
 	}
@@ -161,9 +162,9 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 
 	var selectedVote string
 	if usersVoteKey != nil {
-		if usersVote.Value == acceptedStatus {
+		if usersVote.Value == bhap.AcceptedStatus {
 			selectedVote = "ACCEPT"
-		} else if usersVote.Value == rejectedStatus {
+		} else if usersVote.Value == bhap.RejectedStatus {
 			selectedVote = "REJECTED"
 		} else {
 			http.Error(w, "Unknown vote type",
@@ -174,11 +175,14 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var percentAccepted, percentRejected, percentUndecided int
-	if userCount-1 != 0 {
-		percentAccepted = int((acceptedCount / (userCount - 1)) * 100)
-		percentRejected = int((rejectedCount / (userCount - 1)) * 100)
-		percentUndecided = int((undecidedCount / (userCount - 1)) * 100)
+	countBesidesAuthor := float64(userCount - 1)
+	if countBesidesAuthor != 0 {
+		percentAccepted = int((float64(acceptedCount) / countBesidesAuthor) * 100)
+		percentRejected = int((float64(rejectedCount) / countBesidesAuthor) * 100)
+		percentUndecided = int((float64(undecidedCount) / countBesidesAuthor) * 100)
 	}
+
+	editable := isEditableStatus(loadedBHAP.Status) && userKey.Equal(loadedBHAP.Author)
 
 	filler := bhapPageFiller{
 		LoggedIn:     userKey != nil,
@@ -187,7 +191,7 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 		BHAP:         loadedBHAP,
 		OptionsMode:  mode,
 		SelectedVote: selectedVote,
-		Editable:     isEditable(loadedBHAP.Status),
+		Editable:     editable,
 		HTMLContent:  template.HTML(html),
 
 		VoteCount: len(allVotes),
@@ -197,6 +201,5 @@ func serveBHAPPage(w http.ResponseWriter, r *http.Request) {
 		PercentRejected:  percentRejected,
 		PercentUndecided: percentUndecided,
 	}
-	log.Infof(ctx, "Filler: %+v", filler)
 	showTemplate(ctx, w, bhapTemplate, filler)
 }

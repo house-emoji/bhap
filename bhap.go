@@ -1,4 +1,4 @@
-package main
+package bhap
 
 import (
 	"context"
@@ -7,73 +7,72 @@ import (
 	"time"
 
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
-// status describes the current status of a BHAP.
-type status string
+// Status describes the current status of a BHAP.
+type Status string
 
 const (
 	// draftStatus is for a BHAP that is still being written.
-	draftStatus status = "Draft"
+	DraftStatus Status = "Draft"
 	// deferredStatus is for a BHAP that is on hold.
-	deferredStatus status = "Deferred"
+	DeferredStatus Status = "Deferred"
 	// rejectedStatus is for a BHAP that was rejected during voting.
-	rejectedStatus status = "Rejected"
+	RejectedStatus Status = "Rejected"
 	// discussionStatus is for a BHAP currently being considered.
-	discussionStatus status = "Discussion"
+	DiscussionStatus Status = "Discussion"
 	// withdrawnStatus is for a BHAP that was removed by its author.
-	withdrawnStatus status = "Withdrawn"
+	WithdrawnStatus Status = "Withdrawn"
 	// acceptedStatus is for a BHAP that was voted on.
-	acceptedStatus status = "Accepted"
+	AcceptedStatus Status = "Accepted"
 	// replacedStatus is for a BHAP that was superseded by another BHAP.
-	replacedStatus status = "Replaced"
+	ReplacedStatus Status = "Replaced"
 	// aprilFoolsStatus is for a BHAP that should not be taken seriously.
-	aprilFoolsStatus status = "April Fools"
+	AprilFoolsStatus Status = "April Fools"
 )
 
-const bhapEntityName = "BHAP"
+const BHAPEntityName = "BHAP"
 
-// bhap contains info on a BHAP proposal. It is meant to be persisted in
+// BHAP contains info on a BHAP proposal. It is meant to be persisted in
 // Datastore.
-type bhap struct {
+type BHAP struct {
 	ID               int
 	Title            string
 	ShortDescription string
 	LastModified     time.Time
 	Author           *datastore.Key
-	Status           status
+	Status           Status
 	CreatedDate      time.Time
 	// Stored in Markdown
 	Content string
 }
 
-// bhapByID gets a BHAP by the given ID unless none exists, in which case
+// ByID gets a BHAP by the given ID unless none exists, in which case
 // "exists" equals false.
-func bhapByID(ctx context.Context, id int) (bhap, *datastore.Key, error) {
-	var results []bhap
-	query := datastore.NewQuery(bhapEntityName).
+func ByID(ctx context.Context, id int) (BHAP, *datastore.Key, error) {
+	var results []BHAP
+	query := datastore.NewQuery(BHAPEntityName).
 		Filter("ID =", id).
 		Limit(1)
 	keys, err := query.GetAll(ctx, &results)
 	if err != nil {
-		return bhap{}, nil, err
+		return BHAP{}, nil, err
 	}
 
 	if len(results) == 0 {
-		return bhap{}, nil, nil
+		return BHAP{}, nil, nil
 	}
 
 	return results[0], keys[0], nil
 }
 
 // nextID returns the next unused ID for a new BHAP.
-func nextID(ctx context.Context) (int, error) {
+func NextID(ctx context.Context) (int, error) {
 	// TODO(velovix): Nasty race condition here. Some kind of database lock
 	// should fix this
 
-	var results []bhap
-	query := datastore.NewQuery(bhapEntityName).
+	var results []BHAP
+	query := datastore.NewQuery(BHAPEntityName).
 		Order("-ID").
 		Limit(1)
 	if _, err := query.GetAll(ctx, &results); err != nil {
@@ -87,26 +86,26 @@ func nextID(ctx context.Context) (int, error) {
 	}
 }
 
-// allBHAPs returns all recorded BHAPs.
-func allBHAPs(ctx context.Context) ([]bhap, error) {
-	var results []bhap
-	_, err := datastore.NewQuery(bhapEntityName).
+// GetAll returns all recorded BHAPs.
+func GetAll(ctx context.Context) ([]BHAP, error) {
+	var results []BHAP
+	_, err := datastore.NewQuery(BHAPEntityName).
 		Order("ID").
 		GetAll(ctx, &results)
 	if err != nil {
-		return []bhap{}, err
+		return []BHAP{}, err
 	}
 
 	return results, nil
 }
 
-// bhapsByStatus returns all BHAPs with the given status(es).
-func bhapsByStatus(ctx context.Context, statuses ...status) ([]bhap, error) {
-	allResults := make([][]bhap, len(statuses))
+// ByStatus returns all BHAPs with the given status(es).
+func ByStatus(ctx context.Context, statuses ...Status) ([]BHAP, error) {
+	allResults := make([][]BHAP, len(statuses))
 
 	// Get BHAPs for every status
 	for i, status := range statuses {
-		_, err := datastore.NewQuery(bhapEntityName).
+		_, err := datastore.NewQuery(BHAPEntityName).
 			Order("ID").
 			Filter("Status =", status).
 			GetAll(ctx, &allResults[i])
@@ -116,17 +115,15 @@ func bhapsByStatus(ctx context.Context, statuses ...status) ([]bhap, error) {
 	}
 
 	// Combine the BHAP collections into a single set
-	resultSet := make(map[bhap]bool)
+	resultSet := make(map[BHAP]bool)
 	for _, section := range allResults {
 		for _, result := range section {
 			resultSet[result] = true
 		}
 	}
 
-	log.Infof(ctx, "ResultSet: %+v", resultSet)
-
 	// Sort the results
-	sorted := make([]bhap, 0)
+	sorted := make([]BHAP, 0)
 	for result, _ := range resultSet {
 		sorted = append(sorted, result)
 	}
@@ -134,6 +131,5 @@ func bhapsByStatus(ctx context.Context, statuses ...status) ([]bhap, error) {
 		return sorted[i].ID < sorted[j].ID
 	})
 
-	log.Infof(ctx, "Sorted: %+v", sorted)
 	return sorted, nil
 }

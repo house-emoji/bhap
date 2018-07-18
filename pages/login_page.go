@@ -1,4 +1,4 @@
-package main
+package pages
 
 import (
 	"io/ioutil"
@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/house-emoji/bhap"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
 )
@@ -16,8 +17,8 @@ type loginPageFiller struct {
 	BackgroundURL string
 }
 
-// serveLoginPage serves the page for logging in.
-func serveLoginPage(w http.ResponseWriter, r *http.Request) {
+// ServeLoginPage serves the page for logging in.
+func ServeLoginPage(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	backgroundURL, err := randomBackgroundURL()
@@ -35,15 +36,15 @@ func serveLoginPage(w http.ResponseWriter, r *http.Request) {
 	showTemplate(ctx, w, loginTemplate, filler)
 }
 
-// handleLoginForm attempts to log the user in using credentials from a POST
+// HandleLoginForm attempts to log the user in using credentials from a POST
 // form.
-func handleLoginForm(w http.ResponseWriter, r *http.Request) {
+func HandleLoginForm(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	loggedIn, err := checkLogin(ctx, email, password)
+	loggedIn, err := bhap.CheckLogin(ctx, email, password)
 	if err != nil {
 		log.Errorf(ctx, "Error authenticating: %v", err)
 		http.Error(w, "Error authenticating", http.StatusInternalServerError)
@@ -54,7 +55,7 @@ func handleLoginForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginSession, err := sessionStore.Get(r, "login")
+	loginSession, err := bhap.GetSession(r)
 	if err != nil {
 		http.Error(w, "Could not decode session", http.StatusInternalServerError)
 		log.Errorf(ctx, "could not decode session: %v", err)
@@ -72,11 +73,11 @@ func handleLoginForm(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// logout logs the user out.
-func logout(w http.ResponseWriter, r *http.Request) {
+// HandleLogoutForm logs the user out.
+func HandleLogoutForm(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
-	if err := deleteSession(w, r); err != nil {
+	if err := bhap.DeleteSession(w, r); err != nil {
 		http.Error(w, "Could not log out", http.StatusInternalServerError)
 		log.Errorf(ctx, "could not log out: %v", err)
 		return
