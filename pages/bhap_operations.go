@@ -29,6 +29,14 @@ func HandleReadyForDiscussion(op bhapOperator, w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	newID, err := bhap.NextID(ctx)
+	if err != nil {
+		http.Error(w, "Error while assigning new BHAP ID",
+			http.StatusInternalServerError)
+		log.Errorf(ctx, "getting next BHAP ID: %V", err)
+	}
+
+	op.bhap.ID = newID
 	op.bhap.Status = bhap.DiscussionStatus
 	if _, err := datastore.Put(ctx, op.bhapKey, &op.bhap); err != nil {
 		http.Error(w, "Could not update BHAP", http.StatusInternalServerError)

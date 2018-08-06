@@ -16,6 +16,8 @@ func main() {
 	r.HandleFunc("/bhap", pages.ServeListPage)
 	r.HandleFunc("/bhap/{id}", pages.ServeBHAPPage).
 		Methods("GET")
+	r.HandleFunc("/draft/{draftID}", pages.ServeDraftBHAPPage).
+		Methods("GET")
 	r.HandleFunc("/bhap/{id}/edit", pages.ServeEditBHAPPage).
 		Methods("GET")
 

@@ -81,7 +81,7 @@
           <header>Draft BHAPs</header>
           <hr>
           {{range .DraftBHAPs}}
-            <a href="/bhap/{{.ID}}">BHAP {{printf "%04d" .ID}}: {{.Title}}</a>
+            <a href="/draft/{{.DraftID}}">BHAP: {{.Title}}</a>
             <br>
           {{end}}
         </div>

@@ -48,6 +48,74 @@ type bhapPageFiller struct {
 	PercentUndecided int
 }
 
+// ServeBHAPPage serves up a page that displays info on a single BHAP as a
+// draft.
+func ServeDraftBHAPPage(w http.ResponseWriter, r *http.Request) {
+	ctx := appengine.NewContext(r)
+
+	// Get the requested draftID
+	draftID := mux.Vars(r)["draftID"]
+
+	loadedBHAP, bhapKey, err := bhap.ByDraftID(ctx, draftID)
+	if err != nil {
+		log.Errorf(ctx, "could not load BHAP: %v", err)
+		http.Error(w, "Failed to load BHAP", http.StatusInternalServerError)
+		return
+	}
+	if bhapKey == nil {
+		http.Error(w, fmt.Sprintf("No BHAP with draft ID %v", draftID),
+			http.StatusNotFound)
+		log.Warningf(ctx, "unknown draft BHAP requested: %v", draftID)
+		return
+	}
+
+	// Render the BHAP content
+	options := blackfriday.WithExtensions(blackfriday.HardLineBreak)
+	html := string(blackfriday.Run([]byte(loadedBHAP.Content), options))
+
+	var author bhap.User
+	if err := datastore.Get(ctx, loadedBHAP.Author, &author); err != nil {
+		log.Errorf(ctx, "loading user: %v", err)
+		http.Error(w, "Failed to load user", http.StatusInternalServerError)
+		return
+	}
+
+	// Get the current logged in user
+	user, userKey, err := bhap.UserFromSession(ctx, r)
+	if err != nil {
+		http.Error(w, "Could not read session", http.StatusInternalServerError)
+		log.Errorf(ctx, "getting session email: %v", err)
+		return
+	}
+
+	var fullName string
+	if userKey != nil {
+		fullName = user.FirstName + " " + user.LastName
+	}
+
+	var mode optionsMode
+	if userKey == nil {
+		mode = modeNotLoggedIn
+	} else if userKey.Equal(loadedBHAP.Author) {
+		mode = modeDraftAuthor
+	} else {
+		mode = modeDraftNotAuthor
+	}
+
+	editable := isEditableStatus(loadedBHAP.Status) && userKey.Equal(loadedBHAP.Author)
+
+	filler := bhapPageFiller{
+		LoggedIn:    userKey != nil,
+		FullName:    fullName,
+		ID:          loadedBHAP.ID,
+		BHAP:        loadedBHAP,
+		OptionsMode: mode,
+		Editable:    editable,
+		HTMLContent: template.HTML(html),
+	}
+	showTemplate(ctx, w, bhapTemplate, filler)
+}
+
 // ServeBHAPPage serves up a page that displays info on a single BHAP.
 func ServeBHAPPage(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
@@ -69,7 +137,8 @@ func ServeBHAPPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if bhapKey == nil {
-		http.Error(w, fmt.Sprintf("No BHAP with ID %v", id), 404)
+		http.Error(w, fmt.Sprintf("No BHAP with ID %v", id),
+			http.StatusNotFound)
 		log.Warningf(ctx, "unknown BHAP requested: %v", id)
 		return
 	}

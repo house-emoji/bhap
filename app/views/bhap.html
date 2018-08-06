@@ -2,7 +2,11 @@
 
 <html>
   <head>
-    <title>BHAP {{printf "%04d" .BHAP.ID}}</title>
+    {{if eq .BHAP.Status "Draft"}}
+      <title>Draft BHAP: {{.BHAP.Title}}</title>
+    {{else}}
+      <title>BHAP {{printf "%04d" .BHAP.ID}}</title>
+    {{end}}
 
     <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
   </head>
@@ -10,7 +14,11 @@
   <body>
     <div id="parent-container">
       <nav>
-        <header>BHAP {{printf "%04d" .BHAP.ID}}</header>
+        {{if eq .BHAP.Status "Draft"}}
+          <header>Draft BHAP</header>
+        {{else}}
+          <header>BHAP {{printf "%04d" .BHAP.ID}}</header>
+        {{end}}
 
         <!--
           A dummy div that provides space between the header and the login

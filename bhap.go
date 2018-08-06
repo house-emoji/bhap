@@ -31,11 +31,27 @@ const (
 	AprilFoolsStatus Status = "April Fools"
 )
 
+// BHAPType describes the type of a BHAP.
+type BHAPType string
+
+const (
+	// MetaBHAPType describes a BHAP that is used to describe the BHAP process
+	// itself.
+	MetaBHAPType = "Meta"
+	// HouseRuleBHAPTYpe describes a BHAP that creates a rule that house
+	// members must follow. Most BHAPs will be of this type.
+	HouseRuleBHAPType = "House Rule"
+)
+
 const BHAPEntityName = "BHAP"
 
 // BHAP contains info on a BHAP proposal. It is meant to be persisted in
 // Datastore.
 type BHAP struct {
+	// DraftID is the ID to refer to this BHAP by before it leaves the draft
+	// stage and is assigned a normal ID
+	DraftID string
+	// ID is the primary identifier for BHAPs that are not in the draft stage
 	ID               int
 	Title            string
 	ShortDescription string
@@ -43,20 +59,21 @@ type BHAP struct {
 	Author           *datastore.Key
 	Status           Status
 	CreatedDate      time.Time
+	Type             BHAPType
 	// Stored in Markdown
-	Content string
+	Content string `datastore:"Content,noindex"`
 }
 
-// ByID gets a BHAP by the given ID unless none exists, in which case
-// "exists" equals false.
-func ByID(ctx context.Context, id int) (BHAP, *datastore.Key, error) {
+// ByDraftID gets a BHAP by the given draft ID. If none exists, the key will
+// equal nil.
+func ByDraftID(ctx context.Context, draftID string) (BHAP, *datastore.Key, error) {
 	var results []BHAP
 	query := datastore.NewQuery(BHAPEntityName).
-		Filter("ID =", id).
+		Filter("DraftID =", draftID).
 		Limit(1)
 	keys, err := query.GetAll(ctx, &results)
 	if err != nil {
-		return BHAP{}, nil, err
+		return BHAP{}, nil, fmt.Errorf("by draft ID %v: %v", draftID, err)
 	}
 
 	if len(results) == 0 {
@@ -66,7 +83,25 @@ func ByID(ctx context.Context, id int) (BHAP, *datastore.Key, error) {
 	return results[0], keys[0], nil
 }
 
-// nextID returns the next unused ID for a new BHAP.
+// ByID gets a BHAP by the given ID. If none exists, the key will equal nil.
+func ByID(ctx context.Context, id int) (BHAP, *datastore.Key, error) {
+	var results []BHAP
+	query := datastore.NewQuery(BHAPEntityName).
+		Filter("ID =", id).
+		Limit(1)
+	keys, err := query.GetAll(ctx, &results)
+	if err != nil {
+		return BHAP{}, nil, fmt.Errorf("by ID %v: %v", id, err)
+	}
+
+	if len(results) == 0 {
+		return BHAP{}, nil, nil
+	}
+
+	return results[0], keys[0], nil
+}
+
+// NextID returns the next unused ID for a new BHAP.
 func NextID(ctx context.Context) (int, error) {
 	// TODO(velovix): Nasty race condition here. Some kind of database lock
 	// should fix this
@@ -93,7 +128,7 @@ func GetAll(ctx context.Context) ([]BHAP, error) {
 		Order("ID").
 		GetAll(ctx, &results)
 	if err != nil {
-		return []BHAP{}, err
+		return nil, err
 	}
 
 	return results, nil

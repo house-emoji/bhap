@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/house-emoji/bhap"
+	"github.com/rs/xid"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -51,14 +52,6 @@ func HandleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
 	shortDescription := r.FormValue("shortDescription")
 	content := r.FormValue("content")
 
-	// Find what the ID of the new BHAP should be
-	newID, err := bhap.NextID(ctx)
-	if err != nil {
-		log.Errorf(ctx, "could not query BHAPs: %v", err)
-		http.Error(w, "Error while finding BHAP", http.StatusInternalServerError)
-		return
-	}
-
 	// Get the current logged in user
 	_, userKey, err := bhap.UserFromSession(ctx, r)
 	if err != nil {
@@ -67,8 +60,11 @@ func HandleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	draftID := xid.New().String()
+
 	newBHAP := bhap.BHAP{
-		ID:               newID,
+		DraftID:          draftID,
+		ID:               -1,
 		Title:            title,
 		ShortDescription: shortDescription,
 		LastModified:     time.Now(),
@@ -79,14 +75,14 @@ func HandleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save the new BHAP
-	key := datastore.NewKey(ctx, "BHAP", "", 0, nil)
+	key := datastore.NewKey(ctx, bhap.BHAPEntityName, "", 0, nil)
 	if _, err := datastore.Put(ctx, key, &newBHAP); err != nil {
 		log.Errorf(ctx, "failed to save BHAP: %v", err)
 		http.Error(w, "Could not save BHAP", http.StatusInternalServerError)
 		return
 	}
 
-	log.Infof(ctx, "Saved BHAP %v: %v", newID, title)
+	log.Infof(ctx, "Saved draft BHAP %v: %v", title)
 
-	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", newID), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/draft/%v", draftID), http.StatusSeeOther)
 }
