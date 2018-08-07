@@ -50,6 +50,7 @@ func HandleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
 
 	title := r.FormValue("title")
 	shortDescription := r.FormValue("shortDescription")
+	isMeta := r.FormValue("is-meta")
 	content := r.FormValue("content")
 
 	// Get the current logged in user
@@ -61,12 +62,17 @@ func HandleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	draftID := xid.New().String()
+	typ := bhap.HouseRuleBHAPType
+	if isMeta == "on" {
+		typ = bhap.MetaBHAPType
+	}
 
 	newBHAP := bhap.BHAP{
 		DraftID:          draftID,
 		ID:               -1,
 		Title:            title,
 		ShortDescription: shortDescription,
+		Type:             typ,
 		LastModified:     time.Now(),
 		Author:           userKey,
 		Status:           bhap.DraftStatus,
@@ -82,7 +88,7 @@ func HandleNewBHAPForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof(ctx, "Saved draft BHAP %v: %v", title)
+	log.Infof(ctx, "saved draft BHAP %v: %v", draftID, title)
 
 	http.Redirect(w, r, fmt.Sprintf("/draft/%v", draftID), http.StatusSeeOther)
 }

@@ -37,10 +37,10 @@ type BHAPType string
 const (
 	// MetaBHAPType describes a BHAP that is used to describe the BHAP process
 	// itself.
-	MetaBHAPType = "Meta"
+	MetaBHAPType BHAPType = "Meta"
 	// HouseRuleBHAPTYpe describes a BHAP that creates a rule that house
 	// members must follow. Most BHAPs will be of this type.
-	HouseRuleBHAPType = "House Rule"
+	HouseRuleBHAPType BHAPType = "House Rule"
 )
 
 const BHAPEntityName = "BHAP"
@@ -101,21 +101,30 @@ func ByID(ctx context.Context, id int) (BHAP, *datastore.Key, error) {
 	return results[0], keys[0], nil
 }
 
-// NextID returns the next unused ID for a new BHAP.
-func NextID(ctx context.Context) (int, error) {
+// NextID returns the next unused ID for a new BHAP, using the numbering
+// convention that fits for the given type.
+func NextID(ctx context.Context, typ BHAPType) (int, error) {
 	// TODO(velovix): Nasty race condition here. Some kind of database lock
 	// should fix this
+	query := datastore.NewQuery(BHAPEntityName).
+		Order("-ID")
+	var indexStart int
+
+	if typ == MetaBHAPType {
+		query = query.Filter("ID <", 100)
+		indexStart = 0
+	} else if typ == HouseRuleBHAPType {
+		query = query.Filter("ID >=", 100)
+		indexStart = 100
+	}
 
 	var results []BHAP
-	query := datastore.NewQuery(BHAPEntityName).
-		Order("-ID").
-		Limit(1)
 	if _, err := query.GetAll(ctx, &results); err != nil {
 		return 0, err
 	}
 
 	if len(results) == 0 {
-		return 0, nil
+		return indexStart, nil
 	} else {
 		return results[0].ID + 1, nil
 	}

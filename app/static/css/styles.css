@@ -133,7 +133,7 @@ nav input {
 	width: 30em;
 }
 
-.proposal-form-container input,textarea {
+.proposal-form-container input[type="text"],textarea {
 	width: 100%;
 	padding: 15px;
 	margin: 0;
@@ -142,6 +142,11 @@ nav input {
 
 	background-color: rgba(255, 255, 255, 0.5);
 	border: 0;
+}
+
+.proposal-form-container .is-meta-checkbox-container {
+	margin-left: 1em;
+	margin-top: 1em;
 }
 
 .proposal-form-container textarea {

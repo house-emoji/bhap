@@ -29,7 +29,7 @@ func HandleReadyForDiscussion(op bhapOperator, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	newID, err := bhap.NextID(ctx)
+	newID, err := bhap.NextID(ctx, op.bhap.Type)
 	if err != nil {
 		http.Error(w, "Error while assigning new BHAP ID",
 			http.StatusInternalServerError)
