@@ -21,12 +21,12 @@ body {
 header {
 	font-size: 500%;
 	text-transform: uppercase;
-	color: white;
+	color: #e0e0e0;
 	text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 p {
-	color: white;
+	color: #e0e0e0;
 	font-size: 130%;
 	text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
 
@@ -61,5 +61,5 @@ input[type="submit"] {
 	margin-top: 1.25em;
 
 	font-size: 150%;
-	background: white;
+	background: #e0e0e0;
 }

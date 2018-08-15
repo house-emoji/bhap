@@ -14,12 +14,22 @@ func main() {
 
 	r.HandleFunc("/", pages.ServeListPage)
 	r.HandleFunc("/bhap", pages.ServeListPage)
+
 	r.HandleFunc("/bhap/{id}", pages.ServeBHAPPage).
 		Methods("GET")
-	r.HandleFunc("/draft/{draftID}", pages.ServeDraftBHAPPage).
+	r.HandleFunc("/draft/{draftID}", pages.ServeBHAPPage).
 		Methods("GET")
-	r.HandleFunc("/bhap/{id}/edit", pages.ServeEditBHAPPage).
+
+	r.HandleFunc("/draft/{draftID}/edit", pages.ServeEditPage).
 		Methods("GET")
+	r.HandleFunc("/bhap/{id}/edit", pages.ServeEditPage).
+		Methods("GET")
+	r.HandleFunc("/draft/{draftID}/edit",
+		pages.SetUpBHAPOperator(pages.HandleEdit)).
+		Methods("POST")
+	r.HandleFunc("/bhap/{id}/edit",
+		pages.SetUpBHAPOperator(pages.HandleEdit)).
+		Methods("POST")
 
 	r.HandleFunc("/bhap/{id}/ready-for-discussion",
 		pages.SetUpBHAPOperator(pages.HandleReadyForDiscussion)).
@@ -36,12 +46,6 @@ func main() {
 	r.HandleFunc("/bhap/{id}/withdraw",
 		pages.SetUpBHAPOperator(pages.HandleWithdraw)).
 		Methods("POST")
-	r.HandleFunc("/bhap/{id}/edit",
-		pages.SetUpBHAPOperator(pages.HandleEdit)).
-		Methods("POST")
-	// TODO(velovix): Implement replaced vote
-	/*r.HandleFunc("/bhap/{id}/vote-replace").
-	Methods("POST")*/
 
 	r.Handle("/propose", pages.RequireLogin(pages.ServeNewBHAPPage)).
 		Methods("GET")

@@ -36,7 +36,7 @@
           {{end}}
         </div>
 
-        <form action="/" method="GET">
+        <form action="/" method="GET" class="back-to-bhaps">
           <input type="submit" value="⮜ Back to BHAPs">
         </form>
       </nav>
@@ -47,7 +47,11 @@
         </div>
 
         {{if .Editable}}
-          <a href="/bhap/{{.BHAP.ID}}/edit">(edit)</a>
+          {{if eq .BHAP.Status "Draft"}}
+            <a href="/draft/{{.BHAP.DraftID}}/edit">(edit)</a>
+          {{else}}
+            <a href="/bhap/{{.BHAP.ID}}/edit">(edit)</a>
+          {{end}}
         {{end}}
       </div>
 
@@ -130,6 +134,12 @@
 
       <div class="proposal-content">
         {{.HTMLContent}}
+      </div>
+
+      <div class="under-proposal">
+        <form action="/" method="GET" class="back-to-bhaps">
+          <input type="submit" value="⮜ Back to BHAPs">
+        </form>
       </div>
     </div>
   </body>

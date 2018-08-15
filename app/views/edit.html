@@ -2,7 +2,11 @@
 
 <html>
   <head>
-    <title>Editing BHAP {{printf "%04d" .BHAP.ID}}</title>
+    {{if eq .BHAP.Status "Draft"}}
+      <title>Editing Draft BHAP: {{.BHAP.Title}}</title>
+    {{else}}
+      <title>Editing BHAP {{printf "%04d" .BHAP.ID}}</title>
+    {{end}}
 
     <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
   </head>
@@ -10,7 +14,11 @@
   <body>
     <div id="parent-container">
       <nav>
-        <header>BHAP {{printf "%04d" .BHAP.ID}}</header>
+        {{if eq .BHAP.Status "Draft"}}
+          <header>Draft BHAP</header>
+        {{else}}
+          <header>BHAP {{printf "%04d" .BHAP.ID}}</header>
+        {{end}}
 
         <!--
           A dummy div that provides space between the header and the login
@@ -28,13 +36,17 @@
           {{end}}
         </div>
 
-        <form action="/" method="GET">
+        <form action="/" method="GET" class="back-to-bhaps">
           <input type="submit" value="⮜ Back to BHAPs">
         </form>
       </nav>
 
       <div class="proposal-form-container">
-        <form action="/bhap/{{.BHAP.ID}}/edit" method="POST">
+        {{if eq .BHAP.Status "Draft"}}
+          <form action="/draft/{{.BHAP.DraftID}}/edit" method="POST">
+        {{else}}
+          <form action="/bhap/{{.BHAP.ID}}/edit" method="POST">
+        {{end}}
           <h2>Title</h2>
           <p>(Do not include BHAP #)</p>
           <input type="text" name="title" value="{{.BHAP.Title}}"/>

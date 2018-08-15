@@ -40,7 +40,7 @@ nav header {
 	text-transform: uppercase;
 }
 
-nav input { 
+.back-to-bhaps input[type="submit"] { 
 	background-color: #e0e0e0;
 
 	border: none;
@@ -54,7 +54,15 @@ nav input {
 	font-size: 130%;
 	font-family: 'Raleway', sans-serif;
 
+	width: 12em;
+
 	justify-self: flex-end;
+}
+
+.under-proposal {
+	text-align: center;
+
+	margin-top: 4em;
 }
 
 .new-bhap {
@@ -154,7 +162,7 @@ nav input {
 }
 
 .proposal-form-container input[type="submit"] {
-	background: white;
+	background: #e0e0e0;
 
 	padding-top: 15px;
 	padding-bottom: 15px;
@@ -200,17 +208,17 @@ nav input {
 
 	border-style: solid;
 	border-width: 1px;
-	border-color: white;
+	border-color: #e0e0e0;
 }
 
 .visual-vote-breakdown .accepted {
-	background-color: white;
+	background-color: #e0e0e0;
 
 	height: 1.5em;
 
 	border-right-style: solid;
 	border-width: 1px;
-	border-color: white;
+	border-color: #e0e0e0;
 
 	color: black;
 	text-align: center;
@@ -223,16 +231,20 @@ nav input {
 
 	border-right-style: solid;
 	border-width: 1px;
-	border-color: white;
+	border-color: #e0e0e0;
 
-	color: white;
+	color: #e0e0e0;
 	text-align: center;
 }
 
 .visual-vote-breakdown .undecided {
 	height: 1.5em;
 
-	color: white;
+	color: #e0e0e0;
+	text-align: center;
+}
+
+.options-container p {
 	text-align: center;
 }
 
@@ -242,7 +254,7 @@ nav input {
 }
 
 .options-container .buttons-container input[type="submit"] {
-	background: white;
+	background: #e0e0e0;
 
 	padding: 1em;
 	padding-left: 1.5em;
@@ -265,7 +277,7 @@ nav input {
 .options-container .buttons-container .reject {
 	background: black;
 
-	color: white;
+	color: #e0e0e0;
 }
 
 .title-and-edit-container {

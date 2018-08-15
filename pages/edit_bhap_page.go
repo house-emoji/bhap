@@ -3,7 +3,6 @@ package pages
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/house-emoji/bhap"
@@ -20,29 +19,20 @@ type editPageFiller struct {
 	BHAP     bhap.BHAP
 }
 
-// ServeEditBHAPPage serves up a page that allows the user to edit a proposal.
-func ServeEditBHAPPage(w http.ResponseWriter, r *http.Request) {
+// ServeEditPage serves up a page that allows the user to edit a proposal.
+func ServeEditPage(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
-	// Get the requested ID
-	idStr := mux.Vars(r)["id"]
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		log.Warningf(ctx, "invalid ID %v: %v", idStr, err)
-		http.Error(w, "ID must be an integer", 400)
-		return
-	}
-
-	// Load the requested BHAP
-	loadedBHAP, bhapKey, err := bhap.ByID(ctx, id)
+	// Load the BHAP
+	loadedBHAP, bhapKey, err := bhapFromURLVars(ctx, mux.Vars(r))
 	if err != nil {
 		log.Errorf(ctx, "could not load BHAP: %v", err)
 		http.Error(w, "Failed to load BHAP", http.StatusInternalServerError)
 		return
 	}
 	if bhapKey == nil {
-		http.Error(w, fmt.Sprintf("No BHAP with ID %v", id), 404)
-		log.Warningf(ctx, "unknown BHAP requested: %v", id)
+		http.Error(w, "No BHAP with that identifier", 404)
+		log.Warningf(ctx, "unknown BHAP requested")
 		return
 	}
 
@@ -114,9 +104,11 @@ func HandleEdit(op bhapOperator, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof(ctx, "Updated BHAP %v:, %v", op.bhap.ID, op.bhap.Title)
-
-	http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
+	if op.bhap.Status == bhap.DraftStatus {
+		http.Redirect(w, r, fmt.Sprintf("/draft/%v", op.bhap.DraftID), http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, fmt.Sprintf("/bhap/%v", op.bhap.ID), http.StatusSeeOther)
+	}
 }
 
 func isEditableStatus(status bhap.Status) bool {

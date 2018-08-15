@@ -2,7 +2,6 @@ package pages
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/house-emoji/bhap"
@@ -28,22 +27,16 @@ func SetUpBHAPOperator(handler bhapOperatorHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := appengine.NewContext(r)
 
-		bhapID, err := strconv.Atoi(mux.Vars(r)["id"])
-		if err != nil {
-			http.Error(w, "ID is not a string", http.StatusBadRequest)
-			log.Warningf(ctx, "BHAP not an ID")
-			return
-		}
-
-		loadedBHAP, key, err := bhap.ByID(ctx, bhapID)
+		// Load the BHAP
+		loadedBHAP, bhapKey, err := bhapFromURLVars(ctx, mux.Vars(r))
 		if err != nil {
 			http.Error(w, "Could not load BHAP", http.StatusInternalServerError)
 			log.Errorf(ctx, "loading BHAP: %v", err)
 			return
 		}
-		if key == nil {
-			http.Error(w, "No BHAP with ID", http.StatusNotFound)
-			log.Warningf(ctx, "request for non-existent BHAP %v", bhapID)
+		if bhapKey == nil {
+			http.Error(w, "No BHAP with that identifier", http.StatusNotFound)
+			log.Warningf(ctx, "request for non-existent BHAP")
 			return
 		}
 
@@ -61,7 +54,7 @@ func SetUpBHAPOperator(handler bhapOperatorHandler) http.HandlerFunc {
 
 		op := bhapOperator{
 			bhap:    loadedBHAP,
-			bhapKey: key,
+			bhapKey: bhapKey,
 			user:    user,
 			userKey: userKey}
 

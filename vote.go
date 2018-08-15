@@ -10,38 +10,39 @@ import (
 
 const voteEntityName = "Vote"
 
-type vote struct {
+// Vote represents a user's vote for a BHAP.
+type Vote struct {
 	OnBHAP *datastore.Key
 	ByUser *datastore.Key
 	Value  Status
 }
 
 // AllVotesForBHAP returns all the votes that have been cast for a given BHAP.
-func AllVotesForBHAP(ctx context.Context, bhapKey *datastore.Key) ([]vote, error) {
-	var votes []vote
+func AllVotesForBHAP(ctx context.Context, bhapKey *datastore.Key) ([]Vote, error) {
+	var votes []Vote
 	_, err := datastore.NewQuery(voteEntityName).
 		Ancestor(bhapKey).
 		GetAll(ctx, &votes)
 	if err != nil {
-		return []vote{}, fmt.Errorf("getting BHAP votes: %v", err)
+		return []Vote{}, fmt.Errorf("getting BHAP votes: %v", err)
 	}
 
 	return votes, nil
 }
 
 // GetVoteForBHAP returns the user's current vote on a BHAP.
-func GetVoteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key) (vote, *datastore.Key, error) {
-	var votes []vote
+func GetVoteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key) (Vote, *datastore.Key, error) {
+	var votes []Vote
 	keys, err := datastore.NewQuery(voteEntityName).
 		Ancestor(bhapKey).
 		Filter("ByUser =", userKey).
 		GetAll(ctx, &votes)
 	if err != nil {
-		return vote{}, nil, fmt.Errorf("getting user's vote: %v", err)
+		return Vote{}, nil, fmt.Errorf("getting user's vote: %v", err)
 	}
 
 	if len(votes) == 0 {
-		return vote{}, nil, nil
+		return Vote{}, nil, nil
 	} else {
 		return votes[0], keys[0], nil
 	}
@@ -50,7 +51,7 @@ func GetVoteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key) (vote,
 // SetVoteForBHAP sets the vote of the user for the given BHAP to a value,
 // creating a new vote object if necessary.
 func SetVoteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key, value Status) error {
-	var existingVotes []vote
+	var existingVotes []Vote
 	existingKeys, err := datastore.NewQuery(voteEntityName).
 		Ancestor(bhapKey).
 		Filter("ByUser =", userKey).
@@ -59,13 +60,13 @@ func SetVoteForBHAP(ctx context.Context, bhapKey, userKey *datastore.Key, value 
 		return fmt.Errorf("looking for existing votes: %v", err)
 	}
 
-	var voteToSave vote
+	var voteToSave Vote
 	var voteKey *datastore.Key
 
 	if len(existingVotes) == 0 {
 		// Make a new vote if one doesn't exist
 		voteKey = datastore.NewIncompleteKey(ctx, voteEntityName, bhapKey)
-		voteToSave = vote{
+		voteToSave = Vote{
 			OnBHAP: bhapKey,
 			ByUser: userKey,
 			Value:  value}

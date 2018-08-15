@@ -75,8 +75,6 @@ func ServeListPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof(ctx, "Drafts: %+v", draftBHAPs)
-
 	filler := listPageFiller{
 		LoggedIn:        userKey != nil,
 		FullName:        currUser.FirstName + " " + currUser.LastName,
